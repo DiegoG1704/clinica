@@ -14,7 +14,7 @@ app.set('port', process.env.PORT || 4000);
 app.set('views', join(__dirname,'views'));
 app.engine('hbs', engine({
     defaultLayout:'main',
-    layoutsDir:join(app.get('views'), 'layouds'),
+    layoutsDir:join(app.get('views'), 'layouts'),
     partialsDir:join(app.get('views'),'partials'),
     extname:'.hbs'
 }));
@@ -25,7 +25,9 @@ app.use(express.urlencoded({ extended: false}));
 app.use(express.json());
 
 //routes-------------------------------------------
-
+app.get('/',async(req,res)=>{
+    res.status(200).json({ message: 'hello world' });
+});
 app.use(usuarios);
 app.use(datosPersonales)
 
