@@ -3,11 +3,19 @@ import { deleteUsuario, editUsuarioId, getUsuario, getUsuarioId, postUsuario } f
 
 const router = Router();
 
-router.post('/add', postUsuario)
-router.get('/list',getUsuario)
-router.get('/edit/:id', getUsuarioId)
-router.put('/edit/:id', editUsuarioId);
-router.delete('/delete/:id', deleteUsuario)
+// Crear un nuevo usuario
+router.post('/add', postUsuario);
 
+// Obtener lista de usuarios
+router.get('/list', getUsuario);
+
+// Obtener usuario por ID
+router.get('/user/:id', getUsuarioId); // Cambié la ruta para mayor claridad
+
+// Editar usuario por ID
+router.put('/user/edit/:id', editUsuarioId); // Consistente en la nomenclatura
+
+// Eliminar usuario por ID
+router.delete('/user/delete/:id', deleteUsuario); // Consistente en la nomenclatura
 
 export default router;
