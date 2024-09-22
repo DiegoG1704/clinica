@@ -9,7 +9,7 @@ export const postUsuario = async (req, res) => {
 
     try {
         const newUsuario = { DNI, Contraseña };
-        await pool.query('INSERT INTO usuario SET ?', [newUsuario]);
+        await pool.query('INSERT INTO USUARIO SET ?', [newUsuario]);
         res.status(201).json({ message: 'Usuario creado', newUsuario });
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -18,7 +18,7 @@ export const postUsuario = async (req, res) => {
 
 export const getUsuario = async (req, res) => {
     try {
-        const [result] = await pool.query('SELECT * FROM usuario');
+        const [result] = await pool.query('SELECT * FROM USUARIO');
         res.status(200).json(result);
     } catch (error) {
         res.status(500).json({ message: error.message });
@@ -29,7 +29,7 @@ export const getUsuarioId = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [usuario] = await pool.query('SELECT DNI FROM usuario WHERE id = ?', [id]);
+        const [usuario] = await pool.query('SELECT DNI FROM USUARIO WHERE id = ?', [id]);
 
         if (usuario.length === 0) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -51,7 +51,7 @@ export const editUsuarioId = async (req, res) => {
 
     try {
         const editUsuario = { DNI, Contraseña };
-        const result = await pool.query('UPDATE usuario SET ? WHERE id = ?', [editUsuario, id]);
+        const result = await pool.query('UPDATE USUARIO SET ? WHERE id = ?', [editUsuario, id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Usuario no encontrado para actualizar' });
@@ -68,7 +68,7 @@ export const deleteUsuario = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [result] = await pool.query('DELETE FROM usuario WHERE id = ?', [id]);
+        const [result] = await pool.query('DELETE FROM USUARIO WHERE id = ?', [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Usuario no encontrado para eliminar' });
