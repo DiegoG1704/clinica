@@ -29,11 +29,6 @@ app.get('/',async(req,res)=>{
 app.use(usuarios);
 app.use(datosPersonales)
 
-app.use((req,res,next)=>{
-    res.status(404).json({
-        message:'Data found'
-    })
-}) 
 
 //-----------------------------------------------
 app.use(express.static(join(__dirname,'public')));

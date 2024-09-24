@@ -23,26 +23,41 @@ export const getDatosId = async (req, res) => {
 };
 
 export const postDatos = async (req, res) => {
+    const { id } = req.params;
     const { Nombre, ApellidoP, ApellidoM, Direccion, EstadoC, Fechnac } = req.body;
 
+    // Validar campos obligatorios
     if (!Nombre || !ApellidoP || !ApellidoM || !Direccion || !EstadoC || !Fechnac) {
-        return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+        return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios' });
     }
 
     try {
         const campos = {
+            Idusuario: id,
             Nombre,
             ApellidoP,
             ApellidoM,
             Direccion,
             EstadoC,
             Fechnac,
-            afiliador: false // Establece afiliador a false por defecto
+            afiliador: false // Valor por defecto
         };
-        await pool.query('INSERT INTO datospersonales SET ?', [campos]);
-        res.status(201).json({ message: 'Datos creados correctamente' });
+
+        // Insertar datos en la base de datos
+        const result = await pool.query('INSERT INTO datospersonales SET ?', [campos]);
+
+        // Obtener el ID del nuevo registro insertado
+        const nuevoId = result.insertId;
+
+        // Enviar respuesta al usuario con los datos insertados
+        res.status(201).json({
+            success: true,
+            message: 'Datos creados correctamente',
+
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Error al insertar datos:', error); // Registrar el error
+        res.status(500).json({ success: false, message: 'Error al crear datos', error: error.message });
     }
 };
 
@@ -50,8 +65,9 @@ export const putDatos = async (req, res) => {
     const { id } = req.params;
     const { Nombre, ApellidoP, ApellidoM, Direccion, EstadoC, Fechnac } = req.body;
 
+    // Validar campos obligatorios
     if (!Nombre || !ApellidoP || !ApellidoM || !Direccion || !EstadoC || !Fechnac) {
-        return res.status(400).json({ message: 'Todos los campos son obligatorios' });
+        return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios' });
     }
 
     try {
@@ -62,18 +78,26 @@ export const putDatos = async (req, res) => {
             Direccion,
             EstadoC,
             Fechnac,
-            afiliador: false // Establece afiliador a false por defecto
+            afiliador: false // Valor por defecto
         };
+
         const [result] = await pool.query('UPDATE datospersonales SET ? WHERE Id = ?', [campos, id]);
 
+        // Verificar si se actualizó algún registro
         if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Datos no encontrados' });
+            return res.status(404).json({ success: false, message: 'Datos no encontrados' });
         }
-        res.status(200).json({ message: 'Datos editados correctamente' }); // Cambiado a 200
+
+        // Enviar respuesta exitosa
+        res.status(200).json({
+            message: 'Datos editados correctamente',
+        });
     } catch (error) {
-        res.status(500).json({ message: error.message });
+        console.error('Error al actualizar datos:', error); // Registrar el error
+        res.status(500).json({ success: false, message: 'Error al editar datos', error: error.message });
     }
 };
+
 
 export const deleteDatos = async (req, res) => {
     const { id } = req.params;

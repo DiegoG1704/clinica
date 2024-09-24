@@ -9,8 +9,8 @@ routerDP.get('/datos-personales', getDatos);
 // Obtener datos personales por ID
 routerDP.get('/datos-personales/:id', getDatosId);
 
-// Crear nuevos datos personales
-routerDP.post('/datos-personales', postDatos);
+// Ruta para agregar datos personales y asociarlos a un usuario por su Idusuario
+routerDP.post('/datos-personales/:id', postDatos);
 
 // Actualizar datos personales por ID
 routerDP.put('/datos-personales/:id', putDatos);
