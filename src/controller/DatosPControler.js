@@ -1,119 +1,120 @@
 import pool from "../database.js";
 
-export const getDatos = async (req, res) => {
-    try {
-        const [datos] = await pool.query('SELECT * FROM datospersonales');
-        res.status(200).json(datos); // Cambiado a 200
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+export const getPromociones = async (req, res) => {
+    const { id } = req.params; // Obtener el ID de la clínica de los parámetros
+  
+    // Validación del ID de la clínica
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: 'El ID de la clínica es requerido y debe ser un número.' });
     }
-};
+  
+    const query = 'SELECT * FROM Promociones WHERE clinica_id = ?';
+  
+    try {
+      const [results] = await pool.query(query, [id]);
+      res.status(200).json(results);
+    } catch (err) {
+      console.error('Error al obtener las promociones:', err);
+      res.status(500).json({ message: 'Error al obtener las promociones' });
+    }
+  };  
 
-export const getDatosId = async (req, res) => {
+export const postPromocion = async (req, res) => {
+    const { id } = req.params; // Obtener el ID de la clínica de los parámetros
+    const { area, descuento, descripcion } = req.body;
+  
+    // Validaciones
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: 'El ID de la clínica es requerido y debe ser un número.' });
+    }
+  
+    if (!area || typeof area !== 'string' || area.length > 100) {
+      return res.status(400).json({ message: 'El área es requerida y debe ser un texto de hasta 100 caracteres.' });
+    }
+  
+    if (descuento === undefined || isNaN(descuento) || descuento < 0 || descuento > 100) {
+      return res.status(400).json({ message: 'El descuento debe ser un número entre 0 y 100.' });
+    }
+  
+    // Verificar que la clínica exista
+    const checkClinicaQuery = 'SELECT COUNT(*) AS count FROM Clinicas WHERE id = ?';
+    try {
+      const [clinicaCheck] = await pool.query(checkClinicaQuery, [id]);
+      if (clinicaCheck[0].count === 0) {
+        return res.status(404).json({ message: 'La clínica no existe.' });
+      }
+  
+      const query = `INSERT INTO Promociones (area, descuento, descripcion, clinica_id) 
+                     VALUES (?, ?, ?, ?)`;
+      const [result] = await pool.query(query, [area, descuento, descripcion, id]); // Usar id como clinica_id
+      res.status(201).json({ message: 'Promoción creada con éxito', promocionId: result.insertId });
+    } catch (err) {
+      console.error('Error al crear la promoción:', err);
+      res.status(500).json({ message: 'Error al crear la promoción' });
+    }
+  };
+  
+export const editPromocion = async (req, res) => {
     const { id } = req.params;
-    try {
-        const [datos] = await pool.query('SELECT * FROM datospersonales WHERE id = ?', [id]);
-        if (datos.length === 0) {
-            return res.status(404).json({ message: 'Datos no encontrados' });
-        }
-        res.status(200).json(datos[0]); // Cambiado a 200
-    } catch (error) {
-        res.status(500).json({ message: error.message });
+    const { area, descuento, descripcion, clinica_id } = req.body;
+  
+    // Validaciones
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: 'El ID es requerido y debe ser un número.' });
     }
-};
+  
+    if (area && (typeof area !== 'string' || area.length > 100)) {
+      return res.status(400).json({ message: 'El área debe ser un texto de hasta 100 caracteres.' });
+    }
+  
+    if (descuento !== undefined && (isNaN(descuento) || descuento < 0 || descuento > 100)) {
+      return res.status(400).json({ message: 'El descuento debe ser un número entre 0 y 100.' });
+    }
+  
+    if (clinica_id !== undefined && isNaN(clinica_id)) {
+      return res.status(400).json({ message: 'El ID de la clínica debe ser un número.' });
+    }
+  
+    const query = `UPDATE Promociones SET area = ?, descuento = ?, descripcion = ?, clinica_id = ? WHERE id = ?`;
+  
+    try {
+      const [result] = await pool.query(query, [area, descuento, descripcion, clinica_id, id]);
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Promoción no encontrada.' });
+      }
+  
+      res.status(200).json({ message: 'Promoción actualizada con éxito' });
+    } catch (err) {
+      console.error('Error al actualizar la promoción:', err);
+      res.status(500).json({ message: 'Error al actualizar la promoción' });
+    }
+  };
 
-export const postDatos = async (req, res) => {
+export const deletePromocion = async (req, res) => {
     const { id } = req.params;
-    const { Nombre, ApellidoP, ApellidoM, Direccion, EstadoC, Fechnac } = req.body;
-
-    // Validar campos obligatorios
-    if (!Nombre || !ApellidoP || !ApellidoM || !Direccion || !EstadoC || !Fechnac) {
-        return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios' });
+  
+    // Validación del ID
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: 'El ID es requerido y debe ser un número.' });
     }
-
+  
+    const query = `DELETE FROM Promociones WHERE id = ?`;
+  
     try {
-        const campos = {
-            Idusuario: id,
-            Nombre,
-            ApellidoP,
-            ApellidoM,
-            Direccion,
-            EstadoC,
-            Fechnac,
-            afiliador: false // Valor por defecto
-        };
-
-        // Insertar datos en la base de datos
-        const result = await pool.query('INSERT INTO datospersonales SET ?', [campos]);
-
-        // Obtener el ID del nuevo registro insertado
-        const nuevoId = result.insertId;
-
-        // Enviar respuesta al usuario con los datos insertados
-        res.status(201).json({
-            success: true,
-            message: 'Datos creados correctamente',
-
-        });
-    } catch (error) {
-        console.error('Error al insertar datos:', error); // Registrar el error
-        res.status(500).json({ success: false, message: 'Error al crear datos', error: error.message });
+      const [result] = await pool.query(query, [id]);
+  
+      if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Promoción no encontrada.' });
+      }
+  
+      res.status(200).json({ message: 'Promoción eliminada con éxito' });
+    } catch (err) {
+      console.error('Error al eliminar la promoción:', err);
+      res.status(500).json({ message: 'Error al eliminar la promoción' });
     }
-};
-
-export const putDatos = async (req, res) => {
-    const { id } = req.params;
-    const { Nombre, ApellidoP, ApellidoM, Direccion, EstadoC, Fechnac } = req.body;
-
-    // Validar campos obligatorios
-    if (!Nombre || !ApellidoP || !ApellidoM || !Direccion || !EstadoC || !Fechnac) {
-        return res.status(400).json({ success: false, message: 'Todos los campos son obligatorios' });
-    }
-
-    try {
-        const campos = {
-            Nombre,
-            ApellidoP,
-            ApellidoM,
-            Direccion,
-            EstadoC,
-            Fechnac,
-            afiliador: false // Valor por defecto
-        };
-
-        const [result] = await pool.query('UPDATE datospersonales SET ? WHERE Id = ?', [campos, id]);
-
-        // Verificar si se actualizó algún registro
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ success: false, message: 'Datos no encontrados' });
-        }
-
-        // Enviar respuesta exitosa
-        res.status(200).json({
-            message: 'Datos editados correctamente',
-        });
-    } catch (error) {
-        console.error('Error al actualizar datos:', error); // Registrar el error
-        res.status(500).json({ success: false, message: 'Error al editar datos', error: error.message });
-    }
-};
-
-
-export const deleteDatos = async (req, res) => {
-    const { id } = req.params;
-    try {
-        const [result] = await pool.query('DELETE FROM datospersonales WHERE id = ?', [id]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Datos no encontrados para eliminar' }); // Cambiado el mensaje
-        }
-
-        res.status(200).json({ message: 'Datos eliminados con id:', id });
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
-
+  };
+  
 export const AfiliadorEdit = async (req, res) => {
     const { id } = req.params;
 

@@ -1,24 +1,18 @@
 import { Router } from "express";
-import { AfiliadorEdit, deleteDatos, getDatos, getDatosId, postDatos, putDatos } from "../controller/DatosPControler.js";
+import { AfiliadorEdit, deletePromocion, editPromocion, getPromociones, postPromocion} from "../controller/DatosPControler.js";
 
 const routerDP = Router();
 
-// Obtener todos los datos personales
-routerDP.get('/datos-personales', getDatos);
-
 // Obtener datos personales por ID
-routerDP.get('/datos-personales/:id', getDatosId);
+routerDP.get('/getPromociones/:id', getPromociones);
 
 // Ruta para agregar datos personales y asociarlos a un usuario por su Idusuario
-routerDP.post('/datos-personales/:id', postDatos);
+routerDP.post('/CreatePromocion/:id', postPromocion);
 
 // Actualizar datos personales por ID
-routerDP.put('/datos-personales/:id', putDatos);
+routerDP.put('/editPromocion/:id', editPromocion);
 
 // Eliminar datos personales por ID
-routerDP.delete('/datos-personales/:id', deleteDatos);
-
-// Editar el estado de afiliador por ID
-routerDP.put('/datos-personales/afiliador/:id', AfiliadorEdit);
+routerDP.delete('/deletePromocion/:id', deletePromocion);
 
 export default routerDP;

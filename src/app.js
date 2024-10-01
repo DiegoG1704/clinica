@@ -5,6 +5,7 @@ import {join,dirname} from 'path'
 import { fileURLToPath } from 'url';
 import usuarios from './routes/routes.js'
 import datosPersonales from './routes/RoutesDP.js'
+import VAdministradorGen from './routes/routesAG.js'
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
@@ -28,6 +29,7 @@ app.get('/',async(req,res)=>{
 });
 app.use(usuarios);
 app.use(datosPersonales)
+app.use(VAdministradorGen)
 
 
 //-----------------------------------------------
