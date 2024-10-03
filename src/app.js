@@ -6,9 +6,12 @@ import { fileURLToPath } from 'url';
 import usuarios from './routes/routes.js'
 import datosPersonales from './routes/RoutesDP.js'
 import VAdministradorGen from './routes/routesAG.js'
+import cors from 'cors';
 
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+app.use(cors());
 
 app.set('views', join(__dirname,'views'));
 app.engine('hbs', engine({

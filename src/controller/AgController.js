@@ -66,8 +66,6 @@ export const getClinica = async (req, res) => {
     }
 };
 
-
-
   
   export const editClinica = async (req, res) => {
     const { id } = req.params;
