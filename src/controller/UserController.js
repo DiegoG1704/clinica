@@ -72,7 +72,7 @@ export const crearUsuario = async (req, res) => {
 
         const [result] = await pool.query(query, [correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id]);
 
-        res.status(201).json({ message: 'Usuario creado con éxito', usuarioId: result.insertId });
+        res.status(201).json({  success: true, message: 'Usuario creado con éxito', usuarioId: result.insertId });
     } catch (err) {
         console.error('Error al crear el usuario:', err);
         if (err.code === 'ER_DUP_ENTRY') {
@@ -324,7 +324,9 @@ export const loginUsuario = async (req, res) => {
         if (contraseña !== usuario.contraseña) {
             return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
         }
-        res.status(200).json({ message: 'Bienvenido'});
+
+        // Si todo es correcto, responder con éxito y el usuario
+        return res.status(200).json({ success: true, usuario, message: 'Bienvenido' });
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error del servidor' });
