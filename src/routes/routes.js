@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteUsuario, editUsuarioId, getUsuario, loginUsuario, getUsuarioDetalles, postRol, crearUsuario, getUsuariosId, getUsuarioById, getAfiliadosPorUsuarioId, getUsuarioDatosId } from "../controller/UserController.js";
+import { deleteUsuario, editUsuarioId, getUsuario, loginUsuario, postRol, crearUsuario, getUsuariosId, getUsuarioById, getAfiliadosPorUsuarioId, getUsuarioDatosId } from "../controller/UserController.js";
 
 const router = Router();
 
