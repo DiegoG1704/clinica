@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteUsuario, editUsuarioId, getUsuario, loginUsuario, getUsuarioDetalles, postRol, crearUsuario, getUsuariosId, getUsuarioById, getAfiliadosPorUsuarioId } from "../controller/UserController.js";
+import { deleteUsuario, editUsuarioId, getUsuario, loginUsuario, getUsuarioDetalles, postRol, crearUsuario, getUsuariosId, getUsuarioById, getAfiliadosPorUsuarioId, getUsuarioDatosId } from "../controller/UserController.js";
 
 const router = Router();
 
@@ -12,6 +12,8 @@ router.get('/list', getUsuario);
 // Obtener usuario por ID
 router.get('/user', getUsuariosId);
 
+router.get('/user/:id', getUsuarioDatosId);
+
 // Editar usuario por ID
 router.put('/user/edit/:id', editUsuarioId);
 
@@ -20,8 +22,6 @@ router.delete('/user/delete/:id', deleteUsuario);
 
 // Ruta para login
 router.post('/login', loginUsuario);
-// Ruta para obtener todos los detalles del usuario
-router.get('/user/details/:id', getUsuarioDetalles); // Nueva ruta para obtener detalles de usuario
 
 router.get('/usuarios/:id', getUsuarioById)
 

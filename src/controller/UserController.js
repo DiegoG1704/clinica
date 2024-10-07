@@ -103,7 +103,7 @@ export const getUsuario = async (req, res) => {
                 a.estado_civil AS afiliador_estado_civil,
                 a.rol_id AS afiliador_rol_id
             FROM 
-                usuarios u
+                Usuarios u
             LEFT JOIN 
                 usuarios a ON u.afiliador_id = a.id
         `;
@@ -196,6 +196,25 @@ export const getUsuariosId = async (req, res) => {
         res.status(500).json({ message: 'Error al obtener los usuarios' });
     }
 };
+
+export const getUsuarioDatosId = async (req, res) => {
+    const { id } = req.params; // Obtener el ID del usuario desde los parámetros de la URL
+    const query = 'SELECT id, correo, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id FROM Usuarios WHERE id = ?';
+
+    try {
+        const [results] = await pool.query(query, [id]); // Ejecutar la consulta con el ID proporcionado
+
+        if (results.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        res.status(200).json(results[0]); // Devolver el primer resultado
+    } catch (err) {
+        console.error('Error al obtener el usuario:', err);
+        res.status(500).json({ message: 'Error al obtener el usuario' });
+    }
+};
+
 
 export const editUsuarioId = async (req, res) => {
     const userId = req.params.id;
@@ -292,7 +311,7 @@ export const deleteUsuario = async (req, res) => {
     const { id } = req.params;
 
     try {
-        const [result] = await pool.query('DELETE FROM usuarios WHERE id = ?', [id]);
+        const [result] = await pool.query('DELETE FROM Usuarios WHERE id = ?', [id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Usuario no encontrado para eliminar' });
@@ -386,11 +405,11 @@ export const getUsuarioById =  async (req, res) => {
                 af.estado_civil AS afiliado_estado_civil,
                 af.rol_id AS afiliado_rol_id
             FROM 
-                usuarios u
+                Usuarios u
             LEFT JOIN 
-                usuarios a ON u.afiliador_id = a.id
+                Usuarios a ON u.afiliador_id = a.id
             LEFT JOIN 
-                usuarios af ON af.afiliador_id = u.id
+                Usuarios af ON af.afiliador_id = u.id
             WHERE 
                 u.id = ?
         `;
@@ -454,7 +473,7 @@ export const getAfiliadosPorUsuarioId = async (req, res) => {
                 af.estado_civil AS afiliado_estado_civil,
                 af.rol_id AS afiliado_rol_id
             FROM 
-                usuarios af
+                Usuarios af
             WHERE 
                 af.afiliador_id = ?
         `;
@@ -479,30 +498,5 @@ export const getAfiliadosPorUsuarioId = async (req, res) => {
     }
 };
 
-// Controlador para obtener todos los detalles del usuario
-export const getUsuarioDetalles = async (req, res) => {
-    const { id } = req.params;
-
-    try {
-        // Hacemos un JOIN entre USUARIO y DATOSPERSONALES
-        const [result] = await pool.query(`
-            SELECT 
-                U.Id AS IdUsuario, U.DNI, U.Contraseña, 
-                DP.Nombre, DP.ApellidoP, DP.ApellidoM, DP.Direccion, 
-                DP.EstadoC, DP.Fechnac, DP.Afiliador
-            FROM USUARIO U
-            JOIN DATOSPERSONALES DP ON U.Id = DP.Idusuario
-            WHERE U.Id = ?
-        `, [id]);
-
-        if (result.length === 0) {
-            return res.status(404).json({ message: 'Usuario no encontrado' });
-        }
-
-        res.status(200).json(result[0]); // Devolvemos los datos combinados del usuario
-    } catch (error) {
-        res.status(500).json({ message: error.message });
-    }
-};
 
 
