@@ -1,7 +1,22 @@
+import multer from "multer";
 import pool from "../database.js";
 
 export const crearUsuario = async (req, res) => {
-    const { correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id } = req.body;
+    const { 
+        correo, 
+        contraseña, 
+        nombres, 
+        apellidos, 
+        dni, 
+        estado_civil, 
+        rol_id, 
+        afiliador_id, 
+        clinica_id, 
+        fechNac, 
+        telefono, 
+        fotoPerfil, 
+        direccion 
+    } = req.body;
 
     // Validaciones
     if (!correo || !contraseña) {
@@ -67,12 +82,12 @@ export const crearUsuario = async (req, res) => {
         }
 
         const query = `
-            INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?)`;
+            INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, fechNac, telefono, fotoPerfil, direccion)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-        const [result] = await pool.query(query, [correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id]);
+        const [result] = await pool.query(query, [correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, fechNac, telefono, fotoPerfil, direccion]);
 
-        res.status(201).json({  success: true, message: 'Usuario creado con éxito', usuarioId: result.insertId });
+        res.status(201).json({ success: true, message: 'Usuario creado con éxito', usuarioId: result.insertId });
     } catch (err) {
         console.error('Error al crear el usuario:', err);
         if (err.code === 'ER_DUP_ENTRY') {
@@ -81,6 +96,7 @@ export const crearUsuario = async (req, res) => {
         return res.status(500).json({ message: 'Error al crear el usuario.' });
     }
 };
+
 
 export const getUsuario = async (req, res) => {
     try {
@@ -215,10 +231,55 @@ export const getUsuarioDatosId = async (req, res) => {
     }
 };
 
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/');  // Carpeta donde se guardarán las imágenes
+    },
+    filename: (req, file, cb) => {
+        cb(null, `${Date.now()}-${file.originalname}`);  // Guardar la imagen con nombre único
+    }
+});
+
+export const upload = multer({ storage: storage });
+
+export const FotoPerfil = async (req, res) => {
+    try {
+        const Id = req.params.id;
+        const imagePath = req.file.filename;  // Obtener el nombre del archivo guardado
+
+        // Actualizar la ruta de la imagen en la base de datos
+        const query = 'UPDATE Usuarios SET fotoPerfil = ? WHERE Id = ?';
+        const [result] = await pool.query(query, [imagePath, Id]);
+
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        res.status(201).json({ fotoPerfil: imagePath, message: 'Éxito' });
+    } catch (err) {
+        console.error("Error actualizando la imagen de perfil:", err);
+        res.status(500).send("Error al actualizar la imagen de perfil");
+    }
+};
+
 
 export const editUsuarioId = async (req, res) => {
     const userId = req.params.id;
-    const { correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id } = req.body;
+    const { 
+        correo, 
+        contraseña, 
+        nombres, 
+        apellidos, 
+        dni, 
+        estado_civil, 
+        rol_id, 
+        afiliador_id, 
+        clinica_id, 
+        fechNac, 
+        telefono, 
+        fotoPerfil, 
+        direccion 
+    } = req.body;
 
     // Validaciones
     if (!correo || !contraseña) {
@@ -291,10 +352,31 @@ export const editUsuarioId = async (req, res) => {
             dni = ?, 
             estado_civil = ?, 
             rol_id = ?, 
-            afiliador_id = ? 
+            afiliador_id = ?,
+            clinica_id = ?, 
+            fechNac = ?, 
+            telefono = ?, 
+            fotoPerfil = ?,
+            direccion = ?
             WHERE id = ?`;
 
-        const [result] = await pool.query(sql, [correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, userId]);
+        // Nota el cambio en el orden de los parámetros aquí
+        const [result] = await pool.query(sql, [
+            correo, 
+            contraseña, 
+            nombres, 
+            apellidos, 
+            dni, 
+            estado_civil, 
+            rol_id, 
+            afiliador_id,
+            clinica_id, 
+            fechNac, 
+            telefono, 
+            fotoPerfil, 
+            direccion, 
+            userId // userId debe ser el último
+        ]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
@@ -306,6 +388,7 @@ export const editUsuarioId = async (req, res) => {
         return res.status(500).json({ message: 'Error al actualizar el usuario' });
     }
 };
+
 
 export const deleteUsuario = async (req, res) => {
     const { id } = req.params;
@@ -498,5 +581,59 @@ export const getAfiliadosPorUsuarioId = async (req, res) => {
     }
 };
 
+//opcional
+// import fs from 'fs';
+// import path from 'path';
+
+// // Configuración de multer para subir imágenes
+// const storage = multer.diskStorage({
+//     destination: (req, file, cb) => {
+//         cb(null, 'uploads/');  // Carpeta donde se guardarán las imágenes
+//     },
+//     filename: (req, file, cb) => {
+//         cb(null, `${Date.now()}-${file.originalname}`);  // Guardar la imagen con nombre único
+//     }
+// });
+
+// export const upload = multer({ storage: storage });
+
+// export const FotoPerfil = async (req, res) => {
+//     try {
+//         const Id = req.params.id;
+
+//         // Obtener la foto actual del usuario
+//         const queryCurrentPhoto = 'SELECT fotoPerfil FROM Usuarios WHERE Id = ?';
+//         const [currentPhotoResult] = await pool.query(queryCurrentPhoto, [Id]);
+
+//         if (currentPhotoResult.length === 0) {
+//             return res.status(404).json({ message: 'Usuario no encontrado' });
+//         }
+
+//         const currentPhotoPath = currentPhotoResult[0].fotoPerfil;
+
+//         // Eliminar la foto anterior del sistema de archivos
+//         if (currentPhotoPath) {
+//             const filePath = path.join(__dirname, 'uploads', currentPhotoPath);
+//             fs.unlink(filePath, (err) => {
+//                 if (err) {
+//                     console.error("Error eliminando la foto anterior:", err);
+//                     // Continuar con la actualización aunque no se pueda eliminar la foto
+//                 }
+//             });
+//         }
+
+//         // Obtener el nombre del nuevo archivo guardado
+//         const newImagePath = req.file.filename;
+
+//         // Actualizar la ruta de la nueva imagen en la base de datos
+//         const queryUpdatePhoto = 'UPDATE Usuarios SET fotoPerfil = ? WHERE Id = ?';
+//         const [updateResult] = await pool.query(queryUpdatePhoto, [newImagePath, Id]);
+
+//         res.status(201).json({ fotoPerfil: newImagePath, message: 'Éxito' });
+//     } catch (err) {
+//         console.error("Error actualizando la imagen de perfil:", err);
+//         res.status(500).send("Error al actualizar la imagen de perfil");
+//     }
+// };
 
 

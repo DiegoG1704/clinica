@@ -137,6 +137,46 @@ export const getClinica = async (req, res) => {
       res.status(500).json({ message: 'Error al eliminar la clínica' });
     }
   };
+
+  export const ImagoTipo = async (req, res) => {
+    try {
+        const Id = req.params.id;
+        const imagePath = req.file.filename; // Obtener el nombre del archivo guardado
+  
+        // Actualizar la ruta de la imagen en la base de datos
+        const query = 'UPDATE clinicas SET ImagoTipo = ? WHERE Id = ?';
+        const [result] = await pool.query(query, [imagePath, Id]);
+  
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Promoción no encontrada' });
+        }
+  
+        res.status(201).json({ fotoPerfil: imagePath, message: 'Éxito' });
+    } catch (err) {
+        console.error("Error actualizando la imagen de perfil:", err);
+        res.status(500).send("Error al actualizar la imagen de perfil");
+    }
+  };
+
+  export const IsoTipo = async (req, res) => {
+    try {
+        const Id = req.params.id;
+        const imagePath = req.file.filename; // Obtener el nombre del archivo guardado
+  
+        // Actualizar la ruta de la imagen en la base de datos
+        const query = 'UPDATE clinicas SET IsoTipo = ? WHERE Id = ?';
+        const [result] = await pool.query(query, [imagePath, Id]);
+  
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Promoción no encontrada' });
+        }
+  
+        res.status(201).json({ fotoPerfil: imagePath, message: 'Éxito' });
+    } catch (err) {
+        console.error("Error actualizando la imagen de perfil:", err);
+        res.status(500).send("Error al actualizar la imagen de perfil");
+    }
+  };
   
 
 
