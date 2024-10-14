@@ -1,7 +1,7 @@
 import pool from "../database.js";
 import multer from "multer";
 
-export const getPromociones = async (req, res) => {
+export const getPromocionesId = async (req, res) => {
     const { id } = req.params; // Obtener el ID de la clínica de los parámetros
   
     // Validación del ID de la clínica
@@ -19,6 +19,61 @@ export const getPromociones = async (req, res) => {
       res.status(500).json({ message: 'Error al obtener las promociones' });
     }
   };  
+
+export const getPromociones = async (req, res) => {
+  const query = `
+    SELECT 
+      Promociones.*, 
+      Clinicas.IsoTipo 
+    FROM 
+      Promociones 
+    LEFT JOIN 
+      Clinicas ON Promociones.clinica_id = Clinicas.id
+  `; // Consulta que une ambas tablas
+
+  try {
+    const [results] = await pool.query(query);
+    
+    // Verificar si se encontraron resultados
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron promociones.' });
+    }
+
+    res.status(200).json(results);
+  } catch (err) {
+    console.error('Error al obtener las promociones:', err);
+    res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
+  }
+};
+
+export const getTopPromociones = async (req, res) => {
+  const query = `
+    SELECT 
+      Promociones.*, 
+      Clinicas.IsoTipo 
+    FROM 
+      Promociones 
+    LEFT JOIN 
+      Clinicas ON Promociones.clinica_id = Clinicas.id
+    ORDER BY 
+      Promociones.calificacion DESC
+    LIMIT 3
+  `; // Consulta para obtener las 3 promociones con mayor calificación
+
+  try {
+    const [results] = await pool.query(query);
+    
+    // Verificar si se encontraron resultados
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron promociones.' });
+    }
+
+    res.status(200).json(results);
+  } catch (err) {
+    console.error('Error al obtener las promociones:', err);
+    res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
+  }
+};
 
 export const postPromocion = async (req, res) => {
     const { id } = req.params; // Obtener el ID de la clínica de los parámetros

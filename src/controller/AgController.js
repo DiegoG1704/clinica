@@ -12,61 +12,60 @@ export const getClinica = async (req, res) => {
     }
   };
   
-  export const postClinica = async (req, res) => {
-    try {
-        const { nombre, direccion, ruc, ubicacion, telefonos } = req.body;
+export const postClinica = async (req, res) => {
+  try {
+      const { nombre, direccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo } = req.body;
 
-        // Validate required fields
-        if (!nombre || typeof nombre !== 'string' || nombre.trim().length === 0) {
-            return res.status(400).json({ error: 'El campo "nombre" es requerido y debe ser una cadena válida.' });
-        }
-        if (!ruc || typeof ruc !== 'string' || ruc.trim().length === 0) {
-            return res.status(400).json({ error: 'El campo "ruc" es requerido y debe ser una cadena válida.' });
-        }
-        if (!ubicacion || typeof ubicacion !== 'string' || ubicacion.trim().length === 0) {
-            return res.status(400).json({ error: 'El campo "ubicacion" es requerido y debe ser una cadena válida.' });
-        }
-        if (telefonos && typeof telefonos !== 'number') {
-            return res.status(400).json({ error: 'El campo "telefonos" debe ser un número.' });
-        }
+      // Validación de campos requeridos
+      if (!nombre || typeof nombre !== 'string' || nombre.trim().length === 0) {
+          return res.status(400).json({ error: 'El campo "nombre" es requerido y debe ser una cadena válida.' });
+      }
+      if (!ruc || typeof ruc !== 'string' || ruc.trim().length === 0) {
+          return res.status(400).json({ error: 'El campo "ruc" es requerido y debe ser una cadena válida.' });
+      }
+      if (!ubicacion || typeof ubicacion !== 'string' || ubicacion.trim().length === 0) {
+          return res.status(400).json({ error: 'El campo "ubicacion" es requerido y debe ser una cadena válida.' });
+      }
+      if (telefonos && (typeof telefonos !== 'string' || isNaN(telefonos))) {
+          return res.status(400).json({ error: 'El campo "telefonos" debe ser un número válido.' });
+      }
 
-        // Optional: Validate length or format
-        if (nombre.length > 100) {
-            return res.status(400).json({ error: 'El campo "nombre" no puede exceder los 100 caracteres.' });
-        }
-        if (direccion && direccion.length > 255) {
-            return res.status(400).json({ error: 'El campo "direccion" no puede exceder los 255 caracteres.' });
-        }
-        if (ruc.length > 20) {
-            return res.status(400).json({ error: 'El campo "ruc" no puede exceder los 20 caracteres.' });
-        }
-        if (ubicacion.length > 255) {
-            return res.status(400).json({ error: 'El campo "ubicacion" no puede exceder los 255 caracteres.' });
-        }
-        if (telefonos && (telefonos < 100000000 || telefonos > 999999999)) { // Assuming a valid phone number range
-            return res.status(400).json({ error: 'El campo "telefonos" debe ser un número válido de 9 dígitos.' });
-        }
+      // Validación de longitud o formato
+      if (nombre.length > 100) {
+          return res.status(400).json({ error: 'El campo "nombre" no puede exceder los 100 caracteres.' });
+      }
+      if (direccion && direccion.length > 255) {
+          return res.status(400).json({ error: 'El campo "direccion" no puede exceder los 255 caracteres.' });
+      }
+      if (ruc.length > 20) {
+          return res.status(400).json({ error: 'El campo "ruc" no puede exceder los 20 caracteres.' });
+      }
+      if (ubicacion.length > 255) {
+          return res.status(400).json({ error: 'El campo "ubicacion" no puede exceder los 255 caracteres.' });
+      }
+      if (telefonos && (telefonos.length < 9 || telefonos.length > 9)) { // Suponiendo que el número de teléfono debe tener 9 dígitos
+          return res.status(400).json({ error: 'El campo "telefonos" debe ser un número válido de 9 dígitos.' });
+      }
 
-        // Check if the RUC already exists
-        const checkRucSql = 'SELECT * FROM Clinicas WHERE ruc = ?';
-        const [existingClinica] = await pool.query(checkRucSql, [ruc]);
+      // Verifica si el RUC ya existe
+      const checkRucSql = 'SELECT * FROM Clinicas WHERE ruc = ?';
+      const [existingClinica] = await pool.query(checkRucSql, [ruc]);
 
-        if (existingClinica.length > 0) {
-            return res.status(400).json({ error: 'El RUC ya existe. Por favor, use uno diferente.' });
-        }
+      if (existingClinica.length > 0) {
+          return res.status(400).json({ error: 'El RUC ya existe. Por favor, use uno diferente.' });
+      }
 
-        // Insert data into the database
-        const sql = 'INSERT INTO Clinicas (nombre, direccion, ruc, ubicacion, telefonos) VALUES (?, ?, ?, ?, ?)';
-        const [results] = await pool.query(sql, [nombre, direccion, ruc, ubicacion, telefonos]);
+      // Inserta los datos en la base de datos
+      const sql = 'INSERT INTO Clinicas (nombre, direccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      const [results] = await pool.query(sql, [nombre, direccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo]);
 
-        res.status(201).json({ id: results.insertId, message: 'Clinic added successfully' });
-    } catch (error) {
-        console.error('Error inserting data:', error);
-        return res.status(500).json({ error: 'Error inserting data' });
-    }
+      res.status(201).json({ id: results.insertId, message: 'Clínica agregada exitosamente' });
+  } catch (error) {
+      console.error('Error insertando datos:', error);
+      return res.status(500).json({ error: 'Error insertando datos' });
+  }
 };
 
-  
   export const editClinica = async (req, res) => {
     const { id } = req.params;
     const { nombre, direccion, ruc, ubicacion, telefonos } = req.body;
@@ -112,7 +111,6 @@ export const getClinica = async (req, res) => {
     }
   };
   
-
   export const deleteClinica = async (req, res) => {
     const { id } = req.params;
   
@@ -162,6 +160,7 @@ export const getClinica = async (req, res) => {
     try {
         const Id = req.params.id;
         const imagePath = req.file.filename; // Obtener el nombre del archivo guardado
+        console.log('Ruta de la imagen guardada:', imagePath);
   
         // Actualizar la ruta de la imagen en la base de datos
         const query = 'UPDATE clinicas SET IsoTipo = ? WHERE Id = ?';
@@ -178,5 +177,19 @@ export const getClinica = async (req, res) => {
     }
   };
   
+export const GetIsoTipo = async (req, res) => {
+  try {
+      const query = 'SELECT id, IsoTipo FROM Clinicas WHERE IsoTipo IS NOT NULL';
+      const [results] = await pool.query(query);
 
+      if (results.length === 0) {
+          return res.status(404).json({ message: 'No se encontraron isotipos.' });
+      }
+
+      res.status(200).json(results);
+  } catch (error) {
+      console.error('Error al obtener los isotipos:', error);
+      res.status(500).json({ error: 'Error al obtener los isotipos' });
+  }
+};
 

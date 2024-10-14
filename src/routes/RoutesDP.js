@@ -1,11 +1,16 @@
 import { Router } from "express";
-import {deletePromocion, editPromocion, getPromociones, Image, postPromocion} from "../controller/DatosPControler.js";
+import {deletePromocion, editPromocion, getPromociones, getPromocionesId, getTopPromociones, Image, postPromocion} from "../controller/DatosPControler.js";
 import { upload } from "../controller/UserController.js";
 
 const routerDP = Router();
 
 // Obtener datos personales por ID
-routerDP.get('/getPromociones/:id', getPromociones);
+routerDP.get('/getPromociones/:id', getPromocionesId);
+
+// Obtener datos personales por ID
+routerDP.get('/getPromociones', getPromociones);
+
+routerDP.get('/getPromocionesTop', getTopPromociones);
 
 // Ruta para agregar datos personales y asociarlos a un usuario por su Idusuario
 routerDP.post('/CreatePromocion/:id', postPromocion);
@@ -16,6 +21,7 @@ routerDP.put('/editPromocion/:id', editPromocion);
 // Eliminar datos personales por ID
 routerDP.delete('/deletePromocion/:id', deletePromocion);
 
+// Poner logo 
 routerDP.post('/Promociones/:id/uploadProfileImage', upload.single('imagen'), Image);
 
 

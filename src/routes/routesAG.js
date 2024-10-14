@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteClinica, editClinica, getClinica, ImagoTipo, IsoTipo, postClinica } from "../controller/AgController.js";
+import { deleteClinica, editClinica, getClinica, GetIsoTipo, ImagoTipo, IsoTipo, postClinica } from "../controller/AgController.js";
 import { upload } from "../controller/UserController.js";
 
 const routerAG = Router();
@@ -15,5 +15,7 @@ routerAG.delete('/deleteclinica/:id', deleteClinica)
 routerAG.post('/Clinica/:id/ImagoTipo', upload.single('ImagoTipo'), ImagoTipo);
 
 routerAG.post('/Clinica/:id/IsoTipo', upload.single('IsoTipo'), IsoTipo);
+
+routerAG.get('/clinicas/isotipos', GetIsoTipo)
 
 export default routerAG;
