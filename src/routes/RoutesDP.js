@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {deletePromocion, editPromocion, getPromociones, getPromocionesId, getTopPromociones, Image, postPromocion} from "../controller/DatosPControler.js";
+import {deletePromocion, editPromocion, getPromociones, getPromocionesId, getTopPromociones, Image, postPromocion, Rutas} from "../controller/DatosPControler.js";
 import { upload } from "../controller/UserController.js";
 
 const routerDP = Router();
@@ -24,5 +24,6 @@ routerDP.delete('/deletePromocion/:id', deletePromocion);
 // Poner logo 
 routerDP.post('/Promociones/:id/uploadProfileImage', upload.single('imagen'), Image);
 
+routerDP.get('/Rutas/:id',Rutas)
 
 export default routerDP;

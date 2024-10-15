@@ -207,4 +207,34 @@ export const Image = async (req, res) => {
   }
 };
 
+export const Rutas = async (req, res) => {
+  const { id } = req.params; // Obtener el ID de la clínica de los parámetros
+  
+  // Validación del ID de la clínica
+  if (!id || isNaN(id)) {
+    return res.status(400).json({ message: 'El ID del usuario es necesario y debe ser un número' });
+  }
+
+  const queryUsuario = 'SELECT rol_id FROM Usuarios WHERE id = ?';
+  
+  try {
+    const [resultsUsu] = await pool.query(queryUsuario, [id]);
+
+    // Validar que se haya encontrado un usuario
+    if (resultsUsu.length === 0) {
+      return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+
+    const rolId = resultsUsu[0].rol_id; // Extraer rol_id
+
+    const query = 'SELECT nombre, logo, ruta FROM Vistas WHERE rol_id = ?';
+    const [results] = await pool.query(query, [rolId]);
+    
+    res.status(200).json(results);
+  } catch (err) {
+    console.error('Error al obtener las rutas:', err);
+    res.status(500).json({ message: 'Error al obtener las rutas' });
+  }
+}
+
 

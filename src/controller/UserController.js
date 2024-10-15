@@ -97,7 +97,6 @@ export const crearUsuario = async (req, res) => {
     }
 };
 
-
 export const getUsuario = async (req, res) => {
     try {
         const query = `
@@ -262,7 +261,6 @@ export const FotoPerfil = async (req, res) => {
     }
 };
 
-
 export const editUsuarioId = async (req, res) => {
     const userId = req.params.id;
     const { 
@@ -388,7 +386,6 @@ export const editUsuarioId = async (req, res) => {
         return res.status(500).json({ message: 'Error al actualizar el usuario' });
     }
 };
-
 
 export const deleteUsuario = async (req, res) => {
     const { id } = req.params;
