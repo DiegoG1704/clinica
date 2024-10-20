@@ -103,7 +103,6 @@ export const getUsuario = async (req, res) => {
             SELECT 
                 u.id AS usuario_id, 
                 u.correo, 
-                u.contraseña, 
                 u.nombres, 
                 u.apellidos, 
                 u.dni, 

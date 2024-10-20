@@ -44,7 +44,7 @@ export const getPromociones = async (req, res) => {
     console.error('Error al obtener las promociones:', err);
     res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
   }
-};
+  };
 
 export const getTopPromociones = async (req, res) => {
   const query = `
@@ -73,7 +73,7 @@ export const getTopPromociones = async (req, res) => {
     console.error('Error al obtener las promociones:', err);
     res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
   }
-};
+  };
 
 export const postPromocion = async (req, res) => {
     const { id } = req.params; // Obtener el ID de la clínica de los parámetros
@@ -185,7 +185,7 @@ export const AfiliadorEdit = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-};
+  };
 
 export const Image = async (req, res) => {
   try {
@@ -205,7 +205,7 @@ export const Image = async (req, res) => {
       console.error("Error actualizando la imagen de perfil:", err);
       res.status(500).send("Error al actualizar la imagen de perfil");
   }
-};
+  };
 
 export const Rutas = async (req, res) => {
   const { id } = req.params; // Obtener el ID de la clínica de los parámetros
@@ -235,6 +235,17 @@ export const Rutas = async (req, res) => {
     console.error('Error al obtener las rutas:', err);
     res.status(500).json({ message: 'Error al obtener las rutas' });
   }
-}
+  }
+
+  export const UsuariosRol = async (req,res) =>{
+    const {id} = req.params
+    const queryRol = `select id,correo,nombres,apellidos,telefono,rol_id,clinica_id from Usuarios where rol_id = ?`;
+    try {
+      const [users] = await pool.query(queryRol,[id]);
+      res.status(200).json(users)
+    } catch (error) {
+      res.status(500).json({message:'error',error})      
+    }
+  }
 
 
