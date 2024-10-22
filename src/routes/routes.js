@@ -23,7 +23,7 @@ router.delete('/user/delete/:id', deleteUsuario);
 // Ruta para login
 router.post('/login', loginUsuario);
 
-// router.get('/usuarios/:id', getUsuarioById)
+router.get('/usuarios/:id', getUsuarioById)
 
 router.post('/roles', postRol);;
 

@@ -410,7 +410,17 @@ export const loginUsuario = async (req, res) => {
     }
 
     try {
-        const [rows] = await pool.query('SELECT * FROM Usuarios WHERE correo = ?', [correo]);
+        // Buscar el usuario por correo y obtener sus datos
+        const [rows] = await pool.query(`
+            SELECT 
+                u.id, u.correo, u.contraseña, u.nombres, u.apellidos, u.fotoPerfil, r.nombre AS rol,
+                GROUP_CONCAT(v.ruta) AS rutas
+            FROM Usuarios u
+            LEFT JOIN Roles r ON u.rol_id = r.id
+            LEFT JOIN Vistas v ON r.id = v.Rol_id
+            WHERE u.correo = ?
+            GROUP BY u.id
+        `, [correo]);
 
         if (rows.length === 0) {
             return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
@@ -418,18 +428,38 @@ export const loginUsuario = async (req, res) => {
 
         const usuario = rows[0];
 
-        // Comparar la contraseña proporcionada con la almacenada (sin encriptar)
+        // Comparar la contraseña proporcionada con la almacenada
+        console.log("Contraseña proporcionada:", contraseña);
+        console.log("Contraseña almacenada:", usuario.contraseña);
+
         if (contraseña !== usuario.contraseña) {
             return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
         }
 
-        // Si todo es correcto, responder con éxito y el usuario
-        return res.status(200).json({ success: true, usuario, message: 'Bienvenido' });
+        // Convertir las rutas concatenadas en un array
+        const rutasArray = usuario.rutas ? usuario.rutas.split(',') : [];
+
+        // Responder con éxito, incluyendo el id del usuario y otros datos
+        return res.status(200).json({
+            success: true,
+            usuario: {
+                id: usuario.id,  // Incluyendo el id del usuario
+                correo: usuario.correo,
+                nombres: usuario.nombres,
+                apellidos: usuario.apellidos,
+                fotoPerfil: usuario.fotoPerfil,
+                rol: usuario.rol,
+                rutas: rutasArray
+            },
+            message: 'Bienvenido'
+        });
+
     } catch (error) {
         console.error(error);
         res.status(500).json({ message: 'Error del servidor' });
     }
 };
+
 
 export const postRol = async (req, res) => {
     try {
