@@ -2,20 +2,20 @@ import multer from "multer";
 import pool from "../database.js";
 
 export const crearUsuario = async (req, res) => {
-    const { 
-        correo, 
-        contraseña, 
-        nombres, 
-        apellidos, 
-        dni, 
-        estado_civil, 
-        rol_id, 
-        afiliador_id, 
-        clinica_id, 
-        fechNac, 
-        telefono, 
-        fotoPerfil, 
-        direccion 
+    const {
+        correo,
+        contraseña,
+        nombres,
+        apellidos,
+        dni,
+        estado_civil,
+        rol_id,
+        afiliador_id,
+        clinica_id,
+        fechNac,
+        telefono,
+        fotoPerfil,
+        direccion
     } = req.body;
 
     // Validaciones
@@ -130,13 +130,13 @@ export const getUsuario = async (req, res) => {
 
         result.forEach(user => {
             const {
-                usuario_id, 
-                correo, 
-                contraseña, 
-                nombres, 
-                apellidos, 
-                dni, 
-                estado_civil, 
+                usuario_id,
+                correo,
+                contraseña,
+                nombres,
+                apellidos,
+                dni,
+                estado_civil,
                 rol_id,
                 afiliador_id,
                 afiliador_correo,
@@ -263,20 +263,20 @@ export const FotoPerfil = async (req, res) => {
 
 export const editUsuarioId = async (req, res) => {
     const userId = req.params.id;
-    const { 
-        correo, 
-        contraseña, 
-        nombres, 
-        apellidos, 
-        dni, 
-        estado_civil, 
-        rol_id, 
-        afiliador_id, 
-        clinica_id, 
-        fechNac, 
-        telefono, 
-        fotoPerfil, 
-        direccion 
+    const {
+        correo,
+        contraseña,
+        nombres,
+        apellidos,
+        dni,
+        estado_civil,
+        rol_id,
+        afiliador_id,
+        clinica_id,
+        fechNac,
+        telefono,
+        fotoPerfil,
+        direccion
     } = req.body;
 
     // Validaciones
@@ -360,19 +360,19 @@ export const editUsuarioId = async (req, res) => {
 
         // Nota el cambio en el orden de los parámetros aquí
         const [result] = await pool.query(sql, [
-            correo, 
-            contraseña, 
-            nombres, 
-            apellidos, 
-            dni, 
-            estado_civil, 
-            rol_id, 
+            correo,
+            contraseña,
+            nombres,
+            apellidos,
+            dni,
+            estado_civil,
+            rol_id,
             afiliador_id,
-            clinica_id, 
-            fechNac, 
-            telefono, 
-            fotoPerfil, 
-            direccion, 
+            clinica_id,
+            fechNac,
+            telefono,
+            fotoPerfil,
+            direccion,
             userId // userId debe ser el último
         ]);
 
@@ -402,6 +402,29 @@ export const deleteUsuario = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+const obtenerRutasPorRol = async (id) => {
+    const queryUsuario = 'SELECT rol_id FROM Usuarios WHERE id = ?';
+
+    try {
+        const [resultsUsu] = await pool.query(queryUsuario, [id]);
+
+        // Validar que se haya encontrado un usuario
+        if (resultsUsu.length === 0) {
+            throw new Error('Usuario no encontrado');
+        }
+
+        const rolId = resultsUsu[0].rol_id; // Extraer rol_id
+
+        const queryRutas = 'SELECT nombre, logo, ruta FROM Vistas WHERE rol_id = ?';
+        const [results] = await pool.query(queryRutas, [rolId]);
+
+        return results; // Retornar las rutas
+    } catch (err) {
+        console.error('Error al obtener las rutas:', err);
+        throw err; // Re-lanzar el error para manejarlo en el contexto de la llamada
+    }
+};
+
 
 export const loginUsuario = async (req, res) => {
     const { correo, contraseña } = req.body;
@@ -411,6 +434,7 @@ export const loginUsuario = async (req, res) => {
     }
 
     try {
+        // Buscar al usuario por su correo
         const [rows] = await pool.query('SELECT * FROM Usuarios WHERE correo = ?', [correo]);
 
         if (rows.length === 0) {
@@ -424,13 +448,29 @@ export const loginUsuario = async (req, res) => {
             return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
         }
 
-        // Si todo es correcto, responder con éxito y el usuario
-        return res.status(200).json({ success: true, usuario, message: 'Bienvenido' });
+        // Obtener las rutas utilizando la función reutilizable
+        const rutas = await obtenerRutasPorRol(usuario.id);
+
+        // Responder con éxito, el usuario y sus rutas
+        return res.status(200).json({
+            success: true,
+            usuario: {
+                id: usuario.id,
+                correo: usuario.correo,
+                nombres: usuario.nombres,
+                apellidos: usuario.apellidos,
+                rol_id: usuario.rol_id,
+                rutas:rutas
+                // Puedes incluir más campos si es necesario
+            },
+            message: 'Bienvenido'
+        });
     } catch (error) {
-        console.error(error);
+        console.error('Error del servidor:', error);
         res.status(500).json({ message: 'Error del servidor' });
     }
 };
+
 
 export const postRol = async (req, res) => {
     try {
@@ -457,7 +497,7 @@ export const postRol = async (req, res) => {
     }
 };
 
-export const getUsuarioById =  async (req, res) => {
+export const getUsuarioById = async (req, res) => {
     const userId = req.params.id;
 
     try {

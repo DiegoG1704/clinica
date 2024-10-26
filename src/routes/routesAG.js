@@ -18,4 +18,4 @@ routerAG.post('/Clinica/:id/IsoTipo', upload.single('IsoTipo'), IsoTipo);
 
 routerAG.get('/clinicas/isotipos', GetIsoTipo)
 
-export default routerAG;
+export default routerAG;    
