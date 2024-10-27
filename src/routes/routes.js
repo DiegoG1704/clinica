@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { deleteUsuario, editUsuarioId, getUsuario, loginUsuario, postRol, crearUsuario, getUsuariosId, getUsuarioById, getAfiliadosPorUsuarioId, getUsuarioDatosId, FotoPerfil, upload} from "../controller/UserController.js";
+import { deleteUsuario, editUsuarioId, getUsuario, loginUsuario, postRol, crearUsuario, getUsuariosId, getUsuarioById, getAfiliadosPorUsuarioId, getUsuarioDatosId, FotoPerfil, upload, GetAfiliadorAfiliadores, } from "../controller/UserController.js";
 
 const router = Router();
 
@@ -30,5 +30,7 @@ router.post('/roles', postRol);;
 router.get('/usuarios/:id/afiliados', getAfiliadosPorUsuarioId);
 
 router.post('/Usuario/:id/uploadProfileImage', upload.single('image'), FotoPerfil);
+
+router.get('/afiliadores-afiliados', GetAfiliadorAfiliadores);
 
 export default router;
