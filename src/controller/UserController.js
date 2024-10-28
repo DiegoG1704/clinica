@@ -2,20 +2,21 @@ import multer from "multer";
 import pool from "../database.js";
 
 export const crearUsuario = async (req, res) => {
-    const {
-        correo,
-        contraseña,
-        nombres,
-        apellidos,
-        dni,
-        estado_civil,
-        rol_id,
-        afiliador_id,
-        clinica_id,
-        fechNac,
-        telefono,
-        fotoPerfil,
-        direccion
+    const { 
+        correo, 
+        contraseña, 
+        nombres, 
+        apellidos, 
+        dni, 
+        estado_civil, 
+        rol_id, 
+        afiliador_id, 
+        clinica_id, 
+        Local_id,
+        fechNac, 
+        telefono, 
+        fotoPerfil, 
+        direccion 
     } = req.body;
 
     // Validaciones
@@ -67,33 +68,32 @@ export const crearUsuario = async (req, res) => {
     try {
         // Validar que el afiliador tenga rol_id 3
         if (afiliador_id) {
-            const afiliadorQuery = 'SELECT rol_id FROM Usuarios WHERE id = ?';
-            const [afiliadorResult] = await pool.query(afiliadorQuery, [afiliador_id]);
+            const [afiliadorResult] = await pool.query('SELECT rol_id FROM Usuarios WHERE id = ?', [afiliador_id]);
 
             if (afiliadorResult.length === 0) {
-                return res.status(400).json({ message: 'El afiliador no existe.' });
+                return res.status(400).json({ success: false, message: 'El afiliador no existe.' });
             }
 
             const afiliadorRol = afiliadorResult[0].rol_id;
 
             if (afiliadorRol !== 3) {
-                return res.status(400).json({ message: 'No puedes afiliar a otros hasta que pagues el nuevo plan.' });
+                return res.status(400).json({ success: false, message: 'No puedes afiliar a otros hasta que pagues el nuevo plan.' });
             }
         }
 
         const query = `
-            INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, fechNac, telefono, fotoPerfil, direccion)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+            INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, Local_id, fechNac, telefono, fotoPerfil, direccion)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
-        const [result] = await pool.query(query, [correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, fechNac, telefono, fotoPerfil, direccion]);
+        const [result] = await pool.query(query, [correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, Local_id, fechNac, telefono, fotoPerfil, direccion]);
 
         res.status(201).json({ success: true, message: 'Usuario creado con éxito', usuarioId: result.insertId });
     } catch (err) {
         console.error('Error al crear el usuario:', err);
         if (err.code === 'ER_DUP_ENTRY') {
-            return res.status(400).json({ message: 'El correo ya está en uso.' });
+            return res.status(400).json({ success: false, message: 'El correo ya está en uso.' });
         }
-        return res.status(500).json({ message: 'Error al crear el usuario.' });
+        return res.status(500).json({ success: false, message: 'Error al crear el usuario.' });
     }
 };
 
@@ -103,7 +103,6 @@ export const getUsuario = async (req, res) => {
             SELECT 
                 u.id AS usuario_id, 
                 u.correo, 
-                u.contraseña, 
                 u.nombres, 
                 u.apellidos, 
                 u.dni, 
@@ -434,8 +433,16 @@ export const loginUsuario = async (req, res) => {
     }
 
     try {
-        // Buscar al usuario por su correo
-        const [rows] = await pool.query('SELECT * FROM Usuarios WHERE correo = ?', [correo]);
+        // Buscar el usuario por correo y obtener sus datos, junto con las vistas asociadas a su rol
+        const [rows] = await pool.query(`
+            SELECT 
+                u.id AS usuarioId, u.correo, u.contraseña, u.nombres, u.apellidos, u.fotoPerfil, r.nombre AS rol,
+                v.id AS vistaId, v.nombre AS vistaNombre, v.logo, v.ruta
+            FROM Usuarios u
+            LEFT JOIN Roles r ON u.rol_id = r.id
+            LEFT JOIN Vistas v ON r.id = v.Rol_id
+            WHERE u.correo = ?
+        `, [correo]);
 
         if (rows.length === 0) {
             return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
@@ -443,28 +450,34 @@ export const loginUsuario = async (req, res) => {
 
         const usuario = rows[0];
 
-        // Comparar la contraseña proporcionada con la almacenada (sin encriptar)
+        // Comparar la contraseña proporcionada con la almacenada
         if (contraseña !== usuario.contraseña) {
             return res.status(401).json({ message: 'Correo o contraseña incorrectos' });
         }
 
-        // Obtener las rutas utilizando la función reutilizable
-        const rutas = await obtenerRutasPorRol(usuario.id);
+        // Agrupar las vistas en un array de objetos
+        const vistas = rows.map(row => ({
+            id: row.vistaId,
+            nombre: row.vistaNombre,
+            logo: row.logo,
+            ruta: row.ruta
+        }));
 
-        // Responder con éxito, el usuario y sus rutas
+        // Responder con éxito, incluyendo los datos del usuario y sus vistas
         return res.status(200).json({
             success: true,
             usuario: {
-                id: usuario.id,
+                id: usuario.usuarioId,  // Incluyendo el id del usuario
                 correo: usuario.correo,
                 nombres: usuario.nombres,
                 apellidos: usuario.apellidos,
-                rol_id: usuario.rol_id,
-                rutas:rutas
-                // Puedes incluir más campos si es necesario
+                fotoPerfil: usuario.fotoPerfil,
+                rol: usuario.rol,
+                vistas: vistas  // Array con las vistas del rol
             },
             message: 'Bienvenido'
         });
+
     } catch (error) {
         console.error('Error del servidor:', error);
         res.status(500).json({ message: 'Error del servidor' });

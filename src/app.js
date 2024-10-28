@@ -6,6 +6,7 @@ import { fileURLToPath } from 'url';
 import usuarios from './routes/routes.js'
 import datosPersonales from './routes/RoutesDP.js'
 import VAdministradorGen from './routes/routesAG.js'
+import Locales from './routes/routerLocales.js'
 import cors from 'cors';
 
 const app = express();
@@ -38,6 +39,7 @@ app.get('/', async (req, res) => {
 app.use(usuarios);
 app.use(datosPersonales);
 app.use(VAdministradorGen);
+app.use(Locales);
 
 //-----------------------------------------------
 app.use(express.static(join(__dirname, 'public')));
