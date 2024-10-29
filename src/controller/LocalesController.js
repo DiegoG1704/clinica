@@ -116,3 +116,108 @@ export const DeleteLocal = async (req, res) => {
         return res.status(500).json({ message: 'Error al eliminar el local' });
     }
 };
+
+export const Logistica = async (req, res) => {
+    try {
+        const [data] = await pool.query(`
+            SELECT 
+                COUNT(CASE WHEN rol_id IN (3, 4) THEN 1 END) AS total_afiliados,
+                COUNT(CASE WHEN rol_id = 3 THEN 1 END) AS total_afiliador,
+                COUNT(CASE WHEN rol_id = 4 THEN 1 END) AS total_afiliado,
+                (SELECT COUNT(*) FROM Clinicas) AS total_clinicas,
+                (SELECT COUNT(*) FROM Usuarios WHERE MONTH(fecha_inscripcion) = MONTH(CURRENT_DATE) AND YEAR(fecha_inscripcion) = YEAR(CURRENT_DATE) AND rol_id IN (3, 4)) AS mes_actual
+            FROM Usuarios
+        `);
+
+        // Obtener la cantidad de nuevos afiliadores y afiliados este mes
+        const [nuevosAfiliadores] = await pool.query(`
+            SELECT COUNT(*) AS cambio
+            FROM Usuarios 
+            WHERE rol_id = 3 AND MONTH(fecha_inscripcion) = MONTH(CURRENT_DATE) AND YEAR(fecha_inscripcion) = YEAR(CURRENT_DATE)
+        `);
+
+        const [nuevosAfiliados] = await pool.query(`
+            SELECT COUNT(*) AS cambio
+            FROM Usuarios 
+            WHERE rol_id = 4 AND MONTH(fecha_inscripcion) = MONTH(CURRENT_DATE) AND YEAR(fecha_inscripcion) = YEAR(CURRENT_DATE)
+        `);
+
+        const [AfiliadorPorMes] = await pool.query(`
+            SELECT 
+                MONTH(fecha_inscripcion) AS mes, 
+                YEAR(fecha_inscripcion) AS anio,
+                COUNT(*) AS total
+            FROM Usuarios
+            WHERE rol_id=3
+            GROUP BY anio, mes
+            ORDER BY anio ASC, mes ASC;
+        `);
+
+        const PorMesAFR = AfiliadorPorMes.map(row => ({
+            mes: row.mes,
+            total: row.total,
+        }));
+        const [AfiliadosPorMes] = await pool.query(`
+            SELECT 
+                MONTH(fecha_inscripcion) AS mes, 
+                YEAR(fecha_inscripcion) AS anio,
+                COUNT(*) AS total
+            FROM Usuarios
+            WHERE rol_id=4
+            GROUP BY anio, mes
+            ORDER BY anio ASC, mes ASC;
+        `);
+
+        const PorMesAFS = AfiliadosPorMes.map(row => ({
+            mes: row.mes,
+            total: row.total,
+        }));
+
+        const [clinicasLista] = await pool.query('SELECT id, nombre, ruc, IsoTipo FROM Clinicas WHERE id IN (1, 2, 3)');
+        const [promocionesLista] = await pool.query('SELECT id, area, calificacion, imagen FROM promociones WHERE id IN (1, 2, 3)');
+
+        const total_usuarios = {
+            total: [
+                {
+                    cantidad: data[0].total_afiliados,
+                    title: 'Afiliados',
+                    icono: 'pi pi-users',
+                    severity: 'info',
+                    cambio: data[0].mes_actual // Cambios de usuarios este mes
+                },
+                {
+                    cantidad: data[0].total_afiliador,
+                    title: 'Afiliador',
+                    icono: 'pi pi-user',
+                    severity: 'info',
+                    cambio: nuevosAfiliadores[0].cambio // Nuevos afiliadores este mes
+                },
+                {
+                    cantidad: data[0].total_afiliado,
+                    title: 'Afiliados',
+                    icono: 'pi pi-user',
+                    severity: 'info',
+                    cambio: nuevosAfiliados[0].cambio // Nuevos afiliados este mes
+                },
+                {
+                    cantidad: data[0].total_clinicas,
+                    title: 'Clínicas',
+                    icono: 'pi pi-building',
+                    severity: 'info',
+                    cambio: '5' // Asegúrate de que esto refleje datos precisos
+                }
+            ],
+            clinicasLista,
+            promocionesLista,
+            AfiliadorPorMes:PorMesAFR,
+            AfiliadosPorMes:PorMesAFS
+        };
+
+        return res.status(200).json(total_usuarios);
+    } catch (error) {
+        console.error(error);
+        return res.status(500).json({ message: 'Error al obtener los datos de logística' });
+    }
+};
+
+
