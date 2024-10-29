@@ -1,5 +1,5 @@
 import { Router } from "express";
-import {deletePromocion, editPromocion, getPromociones, getPromocionesId, getTopPromociones, Image, postPromocion, Rutas, UsuariosRol} from "../controller/DatosPControler.js";
+import {deletePromocion, editPromocion, getPromociones, getPromocionesId, getTopPromociones, Image, postPromocion, RolUsuario, Rutas, UsuariosRol} from "../controller/DatosPControler.js";
 import { upload } from "../controller/UserController.js";
 
 const routerDP = Router();
@@ -27,5 +27,7 @@ routerDP.post('/Promociones/:id/uploadProfileImage', upload.single('imagen'), Im
 routerDP.get('/Rutas/:id',Rutas)
 
 routerDP.get('/UsersRol/:id',UsuariosRol)
+
+routerDP.get('/RolUsuario/:id',RolUsuario)
 
 export default routerDP;

@@ -247,3 +247,29 @@ export const Rutas = async (req, res) => {
       res.status(500).json({message:'error',error})      
     }
   }
+
+  export const RolUsuario = async (req, res) => {
+    const { id } = req.params; // Obtener el ID del usuario de los parámetros
+    
+    // Validación del ID del usuario
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: 'El ID del usuario es necesario y debe ser un número' });
+    }
+  
+    const queryUsuario = 'SELECT rol_id FROM Usuarios WHERE id = ?';
+    
+    try {
+      const [resultsUsu] = await pool.query(queryUsuario, [id]);
+  
+      // Validar que se haya encontrado un usuario
+      if (resultsUsu.length === 0) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+      }
+      
+      // Enviar solo el rol_id
+      res.status(200).json({ rol_id: resultsUsu[0].rol_id });
+    } catch (err) {
+      console.error('Error al obtener las rutas:', err);
+      res.status(500).json({ message: 'Error al obtener las rutas' });
+    }
+}

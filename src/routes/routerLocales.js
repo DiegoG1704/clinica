@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { crearLocal, DeleteLocal, editarLocal, GetLocales, LocalesClinica } from "../controller/LocalesController.js";
+import { crearLocal, DeleteLocal, editarLocal, GetLocales, LocalesClinica, Logistica } from "../controller/LocalesController.js";
 
 const RoutesLcl = Router();
 
@@ -8,5 +8,7 @@ RoutesLcl.put('/EditLocal/:id',editarLocal);
 RoutesLcl.get('/GetLocal',GetLocales);
 RoutesLcl.get('/locales/clinica/:clinica_id', LocalesClinica);
 RoutesLcl.delete('/Deletelocales/:id', DeleteLocal);
+RoutesLcl.get('/Logistica',Logistica)
+
 
 export default RoutesLcl;
