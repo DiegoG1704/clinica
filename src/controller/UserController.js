@@ -200,7 +200,7 @@ export const getUsuario = async (req, res) => {
 };
 
 export const getUsuariosId = async (req, res) => {
-    const query = 'SELECT id, correo, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id FROM Usuarios';
+    const query = 'SELECT * FROM Usuarios';
 
     try {
         const [results] = await pool.query(query);
@@ -486,39 +486,47 @@ export const postRol = async (req, res) => {
     }
 };
 
-export const getUsuarioById =  async (req, res) => {
+export const getUsuarioById = async (req, res) => {
     const userId = req.params.id;
 
     try {
         const query = `
             SELECT 
                 u.id AS usuario_id, 
-                u.correo, 
                 u.nombres, 
                 u.apellidos, 
                 u.dni, 
-                u.estado_civil, 
+                u.telefono,
                 u.rol_id,
                 a.id AS afiliador_id,
-                a.correo AS afiliador_correo,
-                a.nombres AS afiliador_nombres,
-                a.apellidos AS afiliador_apellidos,
-                a.dni AS afiliador_dni,
-                a.estado_civil AS afiliador_estado_civil,
-                a.rol_id AS afiliador_rol_id,
                 af.id AS afiliado_id,
-                af.correo AS afiliado_correo,
                 af.nombres AS afiliado_nombres,
-                af.apellidos AS afiliado_apellidos,
+                af.apellidos AS afiliado_nombres,
                 af.dni AS afiliado_dni,
-                af.estado_civil AS afiliado_estado_civil,
-                af.rol_id AS afiliado_rol_id
+                af.telefono AS afiliado_telefono,
+                af.rol_id AS afiliado_rol_id,
+                af2.id AS afiliado_nivel_2_id,
+                af2.nombres AS afiliado_nivel_2_nombres,
+                af2.apellidos AS afiliado_nivel_2_apellidos,
+                af2.dni AS afiliado_nivel_2_dni,
+                af2.telefono AS afiliado_nivel_2_telefono,
+                af2.rol_id AS afiliado_nivel_2_rol_id,
+                af3.id AS afiliado_nivel_3_id,
+                af3.nombres AS afiliado_nivel_3_nombres,
+                af3.apellidos AS afiliado_nivel_3_apellidos,
+                af3.dni AS afiliado_nivel_3_dni,
+                af3.telefono AS afiliado_nivel_3_telefono,
+                af3.rol_id AS afiliado_nivel_3_rol_id
             FROM 
                 Usuarios u
             LEFT JOIN 
                 Usuarios a ON u.afiliador_id = a.id
             LEFT JOIN 
                 Usuarios af ON af.afiliador_id = u.id
+            LEFT JOIN 
+                Usuarios af2 ON af2.afiliador_id = af.id
+            LEFT JOIN 
+                Usuarios af3 ON af3.afiliador_id = af2.id
             WHERE 
                 u.id = ?
         `;
@@ -529,36 +537,40 @@ export const getUsuarioById =  async (req, res) => {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        // Extraemos la información del usuario y sus afiliados
         const user = result[0];
 
-        // Construimos el objeto de respuesta
         const response = {
             id: user.usuario_id,
-            correo: user.correo,
-            nombres: user.nombres,
-            apellidos: user.apellidos,
-            dni: user.dni,
-            estado_civil: user.estado_civil,
-            rol_id: user.rol_id,
-            afiliador: user.afiliador_id ? {
-                id: user.afiliador_id,
-                correo: user.afiliador_correo,
-                nombres: user.afiliador_nombres,
-                apellidos: user.afiliador_apellidos,
-                dni: user.afiliador_dni,
-                estado_civil: user.afiliador_estado_civil,
-                rol_id: user.afiliador_rol_id
-            } : null,
-            afiliados: result.map(item => ({
+            children: result.map(item => ({
                 id: item.afiliado_id,
-                correo: item.afiliado_correo,
                 nombres: item.afiliado_nombres,
-                apellidos: item.afiliado_apellidos,
+                apellidos: item.afiliado_nombres,
                 dni: item.afiliado_dni,
-                estado_civil: item.afiliado_estado_civil,
-                rol_id: item.afiliado_rol_id
-            })).filter(af => af.id !== null) // Filtramos afiliados nulos
+                telefono: item.afiliado_telefono,
+                rol_id: item.afiliado_rol_id,
+                children: result
+                    .filter(af2 => af2.afiliado_id === item.afiliado_id)
+                    .map(af2 => ({
+                        id: af2.afiliado_nivel_2_id,
+                        nombres: af2.afiliado_nivel_2_nombres,
+                        apellidos: af2.afiliado_nivel_2_apellidos,
+                        dni: af2.afiliado_nivel_2_dni,
+                        telefono: af2.afiliado_nivel_2_telefono,
+                        rol_id: af2.afiliado_nivel_2_rol_id,
+                        children: result
+                            .filter(af3 => af3.afiliado_id === af2.afiliado_id)
+                            .map(af3 => ({
+                                id: af3.afiliado_nivel_3_id,
+                                nombres: af3.afiliado_nivel_3_nombres,
+                                apellidos: af3.afiliado_nivel_3_apellidos,
+                                dni: af3.afiliado_nivel_3_dni,
+                                telefono: af3.afiliado_nivel_3_telefono,
+                                rol_id: af3.afiliado_nivel_3_rol_id
+                            }))
+                            .filter(af => af.id !== null)
+                    }))
+                    .filter(af => af.id !== null)
+            })).filter(af => af.id !== null)
         };
 
         res.status(200).json(response);
@@ -567,6 +579,7 @@ export const getUsuarioById =  async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+
 
 export const getAfiliadosPorUsuarioId = async (req, res) => {
     const userId = req.params.id;
