@@ -498,37 +498,50 @@ export const getUsuarioById = async (req, res) => {
                 u.dni, 
                 u.telefono,
                 u.rol_id,
+                r.nombre AS rol_nombre,
                 a.id AS afiliador_id,
                 af.id AS afiliado_id,
                 af.nombres AS afiliado_nombres,
-                af.apellidos AS afiliado_nombres,
+                af.apellidos AS afiliado_apellidos,
                 af.dni AS afiliado_dni,
                 af.telefono AS afiliado_telefono,
                 af.rol_id AS afiliado_rol_id,
+                r2.nombre AS afiliado_rol_nombre,
                 af2.id AS afiliado_nivel_2_id,
                 af2.nombres AS afiliado_nivel_2_nombres,
                 af2.apellidos AS afiliado_nivel_2_apellidos,
                 af2.dni AS afiliado_nivel_2_dni,
                 af2.telefono AS afiliado_nivel_2_telefono,
                 af2.rol_id AS afiliado_nivel_2_rol_id,
+                r3.nombre AS afiliado_nivel_2_rol_nombre,
                 af3.id AS afiliado_nivel_3_id,
                 af3.nombres AS afiliado_nivel_3_nombres,
                 af3.apellidos AS afiliado_nivel_3_apellidos,
                 af3.dni AS afiliado_nivel_3_dni,
                 af3.telefono AS afiliado_nivel_3_telefono,
-                af3.rol_id AS afiliado_nivel_3_rol_id
+                af3.rol_id AS afiliado_nivel_3_rol_id,
+                r4.nombre AS afiliado_nivel_3_rol_nombre
             FROM 
                 Usuarios u
+            LEFT JOIN 
+                Roles r ON u.rol_id = r.id
             LEFT JOIN 
                 Usuarios a ON u.afiliador_id = a.id
             LEFT JOIN 
                 Usuarios af ON af.afiliador_id = u.id
             LEFT JOIN 
+                Roles r2 ON af.rol_id = r2.id
+            LEFT JOIN 
                 Usuarios af2 ON af2.afiliador_id = af.id
             LEFT JOIN 
+                Roles r3 ON af2.rol_id = r3.id
+            LEFT JOIN 
                 Usuarios af3 ON af3.afiliador_id = af2.id
+            LEFT JOIN 
+                Roles r4 ON af3.rol_id = r4.id
             WHERE 
                 u.id = ?
+
         `;
 
         const [result] = await pool.query(query, [userId]);
@@ -540,40 +553,63 @@ export const getUsuarioById = async (req, res) => {
         const user = result[0];
 
         const response = {
-            id: user.usuario_id,
-            children: result.map(item => ({
-                id: item.afiliado_id,
-                nombres: item.afiliado_nombres,
-                apellidos: item.afiliado_nombres,
-                dni: item.afiliado_dni,
-                telefono: item.afiliado_telefono,
-                rol_id: item.afiliado_rol_id,
-                children: result
-                    .filter(af2 => af2.afiliado_id === item.afiliado_id)
-                    .map(af2 => ({
-                        id: af2.afiliado_nivel_2_id,
-                        nombres: af2.afiliado_nivel_2_nombres,
-                        apellidos: af2.afiliado_nivel_2_apellidos,
-                        dni: af2.afiliado_nivel_2_dni,
-                        telefono: af2.afiliado_nivel_2_telefono,
-                        rol_id: af2.afiliado_nivel_2_rol_id,
-                        children: result
-                            .filter(af3 => af3.afiliado_id === af2.afiliado_id)
-                            .map(af3 => ({
-                                id: af3.afiliado_nivel_3_id,
-                                nombres: af3.afiliado_nivel_3_nombres,
-                                apellidos: af3.afiliado_nivel_3_apellidos,
-                                dni: af3.afiliado_nivel_3_dni,
-                                telefono: af3.afiliado_nivel_3_telefono,
-                                rol_id: af3.afiliado_nivel_3_rol_id
-                            }))
-                            .filter(af => af.id !== null)
-                    }))
-                    .filter(af => af.id !== null)
-            })).filter(af => af.id !== null)
+            children: []
         };
-
-        res.status(200).json(response);
+        
+        const uniqueIds = new Set(); // To track unique user IDs
+        
+        result.forEach(item => {
+            // Check if the user is already in the response
+            if (!uniqueIds.has(item.afiliado_id)) {
+                uniqueIds.add(item.afiliado_id);
+        
+                const afiliado = {
+                    id: item.afiliado_id,
+                    nombres: item.afiliado_nombres,
+                    apellidos: item.afiliado_apellidos,
+                    dni: item.afiliado_dni,
+                    telefono: item.afiliado_telefono,
+                    rol: item.afiliado_rol_nombre,
+                    children: []
+                };
+        
+                // Now we populate the children for this afiliado
+                result.forEach(af2 => {
+                    if (af2.afiliado_id === item.afiliado_id && af2.afiliado_nivel_2_id) {
+                        const nivel2 = {
+                            id: af2.afiliado_nivel_2_id,
+                            nombres: af2.afiliado_nivel_2_nombres,
+                            apellidos: af2.afiliado_nivel_2_apellidos,
+                            dni: af2.afiliado_nivel_2_dni,
+                            telefono: af2.afiliado_nivel_2_telefono,
+                            rol: af2.afiliado_nivel_2_rol_nombre,
+                            children: []
+                        };
+        
+                        // Populate the children for nivel 2
+                        result.forEach(af3 => {
+                            if (af3.afiliado_id === af2.afiliado_id && af3.afiliado_nivel_3_id) {
+                                nivel2.children.push({
+                                    id: af3.afiliado_nivel_3_id,
+                                    nombres: af3.afiliado_nivel_3_nombres,
+                                    apellidos: af3.afiliado_nivel_3_apellidos,
+                                    dni: af3.afiliado_nivel_3_dni,
+                                    telefono: af3.afiliado_nivel_3_telefono,
+                                    rol: af3.afiliado_nivel_3_rol_nombre
+                                });
+                            }
+                        });
+        
+                        afiliado.children.push(nivel2);
+                    }
+                });
+        
+                response.children.push(afiliado);
+            }
+        });
+        
+        res.status(200).json(response.children);
+        
     } catch (error) {
         console.error('Error fetching user and affiliates:', error);
         res.status(500).json({ message: error.message });
@@ -583,41 +619,28 @@ export const getUsuarioById = async (req, res) => {
 
 export const getAfiliadosPorUsuarioId = async (req, res) => {
     const userId = req.params.id;
+    const {  
+        rol_id, 
+        codigo
+    } = req.body;
 
     try {
-        const query = `
-            SELECT 
-                af.id AS afiliado_id,
-                af.correo AS afiliado_correo,
-                af.nombres AS afiliado_nombres,
-                af.apellidos AS afiliado_apellidos,
-                af.dni AS afiliado_dni,
-                af.estado_civil AS afiliado_estado_civil,
-                af.rol_id AS afiliado_rol_id
-            FROM 
-                Usuarios af
-            WHERE 
-                af.afiliador_id = ?
-        `;
-
-        const [result] = await pool.query(query, [userId]);
-
-        // Si no hay afiliados, se puede devolver un array vacío
-        const afiliados = result.map(item => ({
-            id: item.afiliado_id,
-            correo: item.afiliado_correo,
-            nombres: item.afiliado_nombres,
-            apellidos: item.afiliado_apellidos,
-            dni: item.afiliado_dni,
-            estado_civil: item.afiliado_estado_civil,
-            rol_id: item.afiliado_rol_id
-        }));
-
-        // Devolver solo el array de afiliados
-        res.status(200).json(afiliados);
-    } catch (error) {
-        console.error('Error fetching affiliates:', error);
-        res.status(500).json({ message: error.message });
+    if (rol_id === undefined && codigo === undefined) {
+        return res.status(400).json({ message: 'Se requiere al menos rol_id o codigo para actualizar.' });
+    }
+    const sql = `UPDATE Usuarios SET rol_id = ?, codigo =? WHERE id = ?`;
+    const [result] = await pool.query(sql, [
+        rol_id, 
+        codigo,
+        userId 
+    ]);
+    if (result.affectedRows === 0) {
+        return res.status(404).json({ message: 'Usuario no encontrado' });
+    }
+        res.json({ message: 'Usuario actualizado exitosamente' });
+    } catch (err) {
+        console.error('Error al actualizar el usuario:', err);
+        return res.status(500).json({ message: 'Error al actualizar el usuario' });
     }
 };
 

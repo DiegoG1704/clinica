@@ -27,7 +27,7 @@ router.get('/usuarios/:id', getUsuarioById)
 
 router.post('/roles', postRol);;
 
-router.get('/usuarios/:id/afiliados', getAfiliadosPorUsuarioId);
+router.put('/CambioRol/:id', getAfiliadosPorUsuarioId);
 
 router.post('/Usuario/:id/uploadProfileImage', upload.single('image'), FotoPerfil);
 
