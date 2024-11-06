@@ -274,7 +274,6 @@ export const editUsuarioId = async (req, res) => {
         clinica_id, 
         fechNac, 
         telefono, 
-        fotoPerfil, 
         direccion 
     } = req.body;
 
@@ -353,7 +352,6 @@ export const editUsuarioId = async (req, res) => {
             clinica_id = ?, 
             fechNac = ?, 
             telefono = ?, 
-            fotoPerfil = ?,
             direccion = ?
             WHERE id = ?`;
 
@@ -369,8 +367,7 @@ export const editUsuarioId = async (req, res) => {
             afiliador_id,
             clinica_id, 
             fechNac, 
-            telefono, 
-            fotoPerfil, 
+            telefono,  
             direccion, 
             userId // userId debe ser el último
         ]);
@@ -413,12 +410,26 @@ export const loginUsuario = async (req, res) => {
         // Buscar el usuario por correo y obtener sus datos, junto con las vistas asociadas a su rol
         const [rows] = await pool.query(`
             SELECT 
-                u.id AS usuarioId, u.correo, u.contraseña, u.nombres, u.apellidos, u.fotoPerfil, r.nombre AS rol,
-                v.id AS vistaId, v.nombre AS vistaNombre, v.logo, v.ruta
-            FROM Usuarios u
-            LEFT JOIN Roles r ON u.rol_id = r.id
-            LEFT JOIN Vistas v ON r.id = v.Rol_id
-            WHERE u.correo = ?
+                u.id AS usuarioId, 
+                u.correo, 
+                u.contraseña, 
+                u.nombres, 
+                u.apellidos, 
+                u.fotoPerfil, 
+                u.clinica_id, 
+                r.nombre AS rol,
+                v.id AS vistaId, 
+                v.nombre AS vistaNombre, 
+                v.logo, 
+                v.ruta
+            FROM 
+                Usuarios u
+            LEFT JOIN 
+                Roles r ON u.rol_id = r.id
+            LEFT JOIN 
+                Vistas v ON r.id = v.rol_id
+            WHERE 
+                u.correo = ?;
         `, [correo]);
 
         if (rows.length === 0) {
@@ -450,13 +461,14 @@ export const loginUsuario = async (req, res) => {
                 apellidos: usuario.apellidos,
                 fotoPerfil: usuario.fotoPerfil,
                 rol: usuario.rol,
-                vistas: vistas  // Array con las vistas del rol
+                ...(usuario.clinica_id ? { clinica_id: usuario.clinica_id } : {}),
+                vistas: vistas
             },
             message: 'Bienvenido'
         });
 
     } catch (error) {
-        console.error(error);
+        console.error('Error del servidor:', error);
         res.status(500).json({ message: 'Error del servidor' });
     }
 };
