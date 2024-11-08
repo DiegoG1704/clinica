@@ -13,16 +13,16 @@ routerDP.get('/getPromociones',verificarToken, getPromociones);
 routerDP.get('/getPromocionesTop',verificarToken, getTopPromociones);
 
 // Ruta para agregar datos personales y asociarlos a un usuario por su Idusuario
-routerDP.post('/CreatePromocion/:id', postPromocion);
+routerDP.post('/CreatePromocion/:id',verificarToken, postPromocion);
 
 // Actualizar datos personales por ID
-routerDP.put('/editPromocion/:id', editPromocion);
+routerDP.put('/editPromocion/:id',verificarToken, editPromocion);
 
 // Eliminar datos personales por ID
-routerDP.delete('/deletePromocion/:id', deletePromocion);
+routerDP.delete('/deletePromocion/:id',verificarToken, deletePromocion);
 
 // Poner logo 
-routerDP.post('/Promociones/:id/uploadProfileImage', upload.single('imagen'), Image);
+routerDP.post('/Promociones/:id/uploadProfileImage',verificarToken, upload.single('imagen'), Image);
 
 routerDP.get('/Rutas/:id',verificarToken,Rutas)
 
