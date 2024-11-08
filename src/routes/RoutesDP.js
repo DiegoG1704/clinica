@@ -13,7 +13,7 @@ routerDP.get('/getPromociones',verificarToken, getPromociones);
 routerDP.get('/getPromocionesTop',verificarToken, getTopPromociones);
 
 // Ruta para agregar datos personales y asociarlos a un usuario por su Idusuario
-routerDP.post('/CreatePromocion/:id',verificarToken, postPromocion);
+routerDP.post('/CreatePromocion',verificarToken, postPromocion);
 
 // Actualizar datos personales por ID
 routerDP.put('/editPromocion/:id',verificarToken, editPromocion);

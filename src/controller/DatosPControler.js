@@ -75,40 +75,43 @@ export const getTopPromociones = async (req, res) => {
   }
   };
 
-export const postPromocion = async (req, res) => {
-    const { id } = req.params; // Obtener el ID de la clínica de los parámetros
-    const { area, descuento, descripcion } = req.body;
-  
-    // Validaciones
-    if (!id || isNaN(id)) {
-      return res.status(400).json({ message: 'El ID de la clínica es requerido y debe ser un número.' });
-    }
-  
+  export const postPromocion = async (req, res) => {
+    const { area, descuento, descripcion, id } = req.body;
+
+    // Validación de 'area'
     if (!area || typeof area !== 'string' || area.length > 100) {
       return res.status(400).json({ message: 'El área es requerida y debe ser un texto de hasta 100 caracteres.' });
     }
-  
+
+    // Validación de 'descuento'
     if (descuento === undefined || isNaN(descuento) || descuento < 0 || descuento > 100) {
       return res.status(400).json({ message: 'El descuento debe ser un número entre 0 y 100.' });
     }
-  
-    // Verificar que la clínica exista
-    const checkClinicaQuery = 'SELECT COUNT(*) AS count FROM Clinicas WHERE id = ?';
+
+    // Validación de 'descripcion' (opcional, pero recomendado)
+    if (descripcion && typeof descripcion !== 'string') {
+      return res.status(400).json({ message: 'La descripción debe ser un texto válido.' });
+    }
+
+    // Validación de 'id' (asegúrate de que sea un ID válido de clínica)
+    if (!id || isNaN(id)) {
+      return res.status(400).json({ message: 'El ID de la clínica es inválido.' });
+    }
+
     try {
-      const [clinicaCheck] = await pool.query(checkClinicaQuery, [id]);
-      if (clinicaCheck[0].count === 0) {
-        return res.status(404).json({ message: 'La clínica no existe.' });
-      }
-  
       const query = `INSERT INTO Promociones (area, descuento, descripcion, clinica_id) 
                      VALUES (?, ?, ?, ?)`;
-      const [result] = await pool.query(query, [area, descuento, descripcion, id]); // Usar id como clinica_id
-      res.status(201).json({ message: 'Promoción creada con éxito', promocionId: result.insertId });
+
+      const [result] = await pool.query(query, [area, descuento, descripcion, id]);
+      res.status(201).json({
+        message: 'Promoción creada con éxito',
+        promocionId: result.insertId
+      });
     } catch (err) {
       console.error('Error al crear la promoción:', err);
-      res.status(500).json({ message: 'Error al crear la promoción' });
+      res.status(500).json({ message: 'Error al crear la promoción. Intenta de nuevo más tarde.' });
     }
-  };
+};
   
 export const editPromocion = async (req, res) => {
     const { id } = req.params;
