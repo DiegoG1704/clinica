@@ -35,4 +35,3 @@ export const GetSubAdministrador = async (req, res) => {
     }
 };
 
-

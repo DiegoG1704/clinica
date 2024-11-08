@@ -1,6 +1,6 @@
 import multer from "multer";
 import pool from "../database.js";
-
+import jwt from 'jsonwebtoken';
 export const crearUsuario = async (req, res) => {
     const { 
         correo, 
@@ -399,6 +399,11 @@ export const deleteUsuario = async (req, res) => {
     }
 };
 
+
+
+// Clave secreta para firmar los tokens (asegúrate de moverla a variables de entorno en producción)
+
+
 export const loginUsuario = async (req, res) => {
     const { correo, contraseña } = req.body;
 
@@ -451,11 +456,24 @@ export const loginUsuario = async (req, res) => {
             ruta: row.ruta
         }));
 
-        // Responder con éxito, incluyendo los datos del usuario y sus vistas
+        // Crear el payload del token con información relevante del usuario
+        const tokenPayload = {
+            id: usuario.usuarioId,
+            correo: usuario.correo,
+            nombres: usuario.nombres,
+            apellidos: usuario.apellidos,
+            rol: usuario.rol,
+            ...(usuario.clinica_id ? { clinica_id: usuario.clinica_id } : {})
+        };
+
+        // Generar el token (expiración de 1 hora, puedes modificar el tiempo si lo deseas)
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
+
+        // Responder con éxito, incluyendo los datos del usuario, sus vistas y el token generado
         return res.status(200).json({
             success: true,
             usuario: {
-                id: usuario.usuarioId,  // Incluyendo el id del usuario
+                id: usuario.usuarioId,
                 correo: usuario.correo,
                 nombres: usuario.nombres,
                 apellidos: usuario.apellidos,
@@ -464,6 +482,7 @@ export const loginUsuario = async (req, res) => {
                 ...(usuario.clinica_id ? { clinica_id: usuario.clinica_id } : {}),
                 vistas: vistas
             },
+            token: token,  // Incluir el token en la respuesta
             message: 'Bienvenido'
         });
 
@@ -471,6 +490,23 @@ export const loginUsuario = async (req, res) => {
         console.error('Error del servidor:', error);
         res.status(500).json({ message: 'Error del servidor' });
     }
+};
+export const verificarToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
+
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(403).json({ message: 'Token no proporcionado o formato incorrecto' });
+    }
+
+    const token = authHeader.split(' ')[1]; // Extraer el token después de 'Bearer'
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ message: 'Token inválido o expirado',err });
+        }
+        req.usuario = decoded; // Almacenar la información del usuario en req para usarla en las siguientes rutas
+        next();
+    });
 };
 
 export const postRol = async (req, res) => {
