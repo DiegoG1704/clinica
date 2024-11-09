@@ -93,11 +93,6 @@ export const getTopPromociones = async (req, res) => {
       return res.status(400).json({ message: 'La descripción debe ser un texto válido.' });
     }
 
-    // Validación de 'id' (asegúrate de que sea un ID válido de clínica)
-    if (!id || isNaN(id)) {
-      return res.status(400).json({ message: 'El ID de la clínica es inválido.' });
-    }
-
     try {
       const query = `INSERT INTO Promociones (area, descuento, descripcion, clinica_id) 
                      VALUES (?, ?, ?, ?)`;
