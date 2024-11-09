@@ -102,15 +102,6 @@ export const crearUsuarioYClinica = async (req, res) => {
     return res.status(400).json({ message: 'El correo electrónico no es válido.' });
   }
 
-  // Validación de la contraseña (mínimo 8 caracteres, 1 número, 1 letra mayúscula y 1 carácter especial)
-  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
-  if (!passwordRegex.test(contraseña)) {
-    return res.status(400).json({
-      message:
-        'La contraseña debe tener al menos 8 caracteres, con al menos 1 número, 1 letra mayúscula y 1 carácter especial.',
-    });
-  }
-
   // Validación del DNI (8 dígitos)
   if (!/^\d{8}$/.test(dni)) {
     return res.status(400).json({ message: 'El DNI debe tener exactamente 8 dígitos.' });
@@ -148,7 +139,7 @@ export const crearUsuarioYClinica = async (req, res) => {
     // 1. Insertar la clínica
     const clinicaSql = `
       INSERT INTO Clinicas (nombre, direccion, ruc, ubicacion, telefonos)
-      VALUES (?, ?, ?, ?, ?, ?, ?)`;
+      VALUES (?, ?, ?, ?, ?)`;
     const [clinicaResult] = await connection.query(clinicaSql, [
       clinicaNombre,
       clinicaDireccion,
@@ -163,7 +154,7 @@ export const crearUsuarioYClinica = async (req, res) => {
     // 2. Insertar el usuario
     const query = `
       INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, clinica_id, fechNac, telefono, direccion)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const [usuarioResult] = await connection.query(query, [
       correo,
