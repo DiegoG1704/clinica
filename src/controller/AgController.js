@@ -73,12 +73,9 @@ export const crearUsuarioYClinica = async (req, res) => {
     dni,
     estado_civil,
     rol_id,
-    afiliador_id,
     clinica,
-    Local_id,
     fechNac,
     telefono,
-    fotoPerfil,
     direccion,
   } = req.body;
 
@@ -120,7 +117,7 @@ export const crearUsuarioYClinica = async (req, res) => {
   }
 
   // Validaciones de los campos de la clínica
-  const { nombre: clinicaNombre, direccion: clinicaDireccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo } = clinica;
+  const { nombre: clinicaNombre, direccion: clinicaDireccion, ruc, ubicacion, telefonos} = clinica;
 
   if (clinicaNombre.length > 100) {
     return res.status(400).json({ message: 'El nombre de la clínica no puede exceder los 100 caracteres.' });
@@ -150,7 +147,7 @@ export const crearUsuarioYClinica = async (req, res) => {
 
     // 1. Insertar la clínica
     const clinicaSql = `
-      INSERT INTO Clinicas (nombre, direccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo)
+      INSERT INTO Clinicas (nombre, direccion, ruc, ubicacion, telefonos)
       VALUES (?, ?, ?, ?, ?, ?, ?)`;
     const [clinicaResult] = await connection.query(clinicaSql, [
       clinicaNombre,
@@ -158,8 +155,6 @@ export const crearUsuarioYClinica = async (req, res) => {
       ruc,
       ubicacion,
       telefonos,
-      ImagoTipo,
-      IsoTipo,
     ]);
 
     // Obtenemos el ID de la clínica insertada
@@ -167,7 +162,7 @@ export const crearUsuarioYClinica = async (req, res) => {
 
     // 2. Insertar el usuario
     const query = `
-      INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, Local_id, fechNac, telefono, fotoPerfil, direccion)
+      INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, clinica_id, fechNac, telefono, direccion)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const [usuarioResult] = await connection.query(query, [
@@ -178,12 +173,9 @@ export const crearUsuarioYClinica = async (req, res) => {
       dni,
       estado_civil,
       rol_id,
-      afiliador_id,
       clinicaId, // Asignar la clínica creada
-      Local_id,
       fechNac,
       telefono,
-      fotoPerfil,
       direccion,
     ]);
 
@@ -194,7 +186,7 @@ export const crearUsuarioYClinica = async (req, res) => {
       success: true,
       message: 'Usuario y clínica creados con éxito.',
       usuarioId: usuarioResult.insertId,
-      clinicaId: clinicaId,
+      clinicaId: usuarioResult,
     });
   } catch (err) {
     // Si ocurre un error, hacer rollback
