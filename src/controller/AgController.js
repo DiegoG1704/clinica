@@ -73,9 +73,7 @@ export const crearUsuarioYClinica = async (req, res) => {
     dni,
     estado_civil,
     rol_id,
-    afiliador_id,
     clinica,
-    Local_id,
     fechNac,
     telefono,
     fotoPerfil,
@@ -167,7 +165,7 @@ export const crearUsuarioYClinica = async (req, res) => {
 
     // 2. Insertar el usuario
     const query = `
-      INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, Local_id, fechNac, telefono, fotoPerfil, direccion)
+      INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, clinica_id, fechNac, telefono, fotoPerfil, direccion)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
 
     const [usuarioResult] = await connection.query(query, [
@@ -178,9 +176,7 @@ export const crearUsuarioYClinica = async (req, res) => {
       dni,
       estado_civil,
       rol_id,
-      afiliador_id,
       clinicaId, // Asignar la clínica creada
-      Local_id,
       fechNac,
       telefono,
       fotoPerfil,

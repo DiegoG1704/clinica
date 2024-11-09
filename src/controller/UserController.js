@@ -1,6 +1,7 @@
 import multer from "multer";
 import pool from "../database.js";
 import jwt from 'jsonwebtoken';
+
 export const crearUsuario = async (req, res) => {
     const { 
         correo, 
@@ -399,11 +400,6 @@ export const deleteUsuario = async (req, res) => {
     }
 };
 
-
-
-// Clave secreta para firmar los tokens (asegúrate de moverla a variables de entorno en producción)
-
-
 export const loginUsuario = async (req, res) => {
     const { correo, contraseña } = req.body;
 
@@ -762,5 +758,107 @@ export const GetAfiliadorAfiliadores = async (req, res) => {
 //         res.status(500).send("Error al actualizar la imagen de perfil");
 //     }
 // };
+
+export const crearUsuarioCode = async (req, res) => {
+    const { 
+        correo, 
+        contraseña, 
+        nombres, 
+        apellidos, 
+        dni, 
+        estado_civil, 
+        rol_id, 
+        fechNac, 
+        telefono, 
+        fotoPerfil, 
+        direccion,
+        codigo2        // Nuevo campo codigo2
+    } = req.body;
+
+    // Validaciones
+    if (!correo || !contraseña) {
+        return res.status(400).json({ message: 'El correo y la contraseña son obligatorios.' });
+    }
+
+    // Validar formato de correo
+    const correoRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!correoRegex.test(correo)) {
+        return res.status(400).json({ message: 'El correo no tiene un formato válido.' });
+    }
+
+    // Validar longitud de la contraseña
+    if (contraseña.length < 6) {
+        return res.status(400).json({ message: 'La contraseña debe tener al menos 6 caracteres.' });
+    }
+
+    // Validar nombres y apellidos
+    if (!nombres || typeof nombres !== 'string' || nombres.length > 100) {
+        return res.status(400).json({ message: 'Los nombres son obligatorios y deben ser un texto de hasta 100 caracteres.' });
+    }
+
+    if (!apellidos || typeof apellidos !== 'string' || apellidos.length > 100) {
+        return res.status(400).json({ message: 'Los apellidos son obligatorios y deben ser un texto de hasta 100 caracteres.' });
+    }
+
+    // Validar DNI
+    if (dni && (isNaN(dni) || dni.toString().length > 8)) {
+        return res.status(400).json({ message: 'El DNI debe ser un número y no puede tener más de 8 dígitos.' });
+    }
+
+    // Validar estado civil
+    const estadosCiviles = ['Soltero', 'Casado', 'Divorciado', 'Viudo', 'Separado'];
+    if (estado_civil && !estadosCiviles.includes(estado_civil)) {
+        return res.status(400).json({ message: 'Estado civil inválido.' });
+    }
+
+    // Validar rol_id
+    if (rol_id && isNaN(rol_id)) {
+        return res.status(400).json({ message: 'El rol_id debe ser un número.' });
+    }
+
+    // Verificación para el código2 del afiliador
+    let afiliador_id = null;
+
+    if (codigo2) {
+        try {
+            // Buscar si existe un usuario con el mismo código y rol_id = 3 (afiliador)
+            const [afiliadorResult] = await pool.query(
+                'SELECT id FROM Usuarios WHERE codigo = ? AND rol_id = 3',
+                [codigo2]
+            );
+
+            if (afiliadorResult.length > 0) {
+                // Si encontramos un afiliador con ese código2, asignamos su id al campo afiliador_id
+                afiliador_id = afiliadorResult[0].id;
+            } else {
+                console.log('No se encontró un afiliador con el código2 proporcionado.');
+            }
+        } catch (err) {
+            console.error('Error al verificar el código2 de afiliador:', err);
+            return res.status(500).json({ success: false, message: 'Error al verificar el código2 del afiliador.' });
+        }
+    }
+
+    try {
+        // Query para insertar el nuevo usuario
+        const query = `
+            INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, fechNac, telefono, fotoPerfil, direccion, codigo2)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+        // Ejecutar la consulta de inserción
+        const [result] = await pool.query(query, [
+            correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, 
+            afiliador_id, fechNac, telefono, fotoPerfil, direccion, codigo2
+        ]);
+
+        res.status(201).json({ success: true, message: 'Usuario creado con éxito', usuarioId: result.insertId, result });
+    } catch (err) {
+        console.error('Error al crear el usuario:', err);
+        if (err.code === 'ER_DUP_ENTRY') {
+            return res.status(400).json({ success: false, message: 'El correo ya está en uso.' });
+        }
+        return res.status(500).json({ success: false, message: 'Error al crear el usuario.' });
+    }
+};
 
 
