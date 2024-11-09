@@ -29,7 +29,6 @@ export const postClinica = async (req, res) => {
       if (telefonos && (typeof telefonos !== 'string' || isNaN(telefonos))) {
           return res.status(400).json({ error: 'El campo "telefonos" debe ser un número válido.' });
       }
-
       // Validación de longitud o formato
       if (nombre.length > 100) {
           return res.status(400).json({ error: 'El campo "nombre" no puede exceder los 100 caracteres.' });
@@ -64,6 +63,151 @@ export const postClinica = async (req, res) => {
       return res.status(500).json({ error: 'Error insertando datos' });
   }
 };
+
+export const crearUsuarioYClinica = async (req, res) => {
+  const {
+    correo,
+    contraseña,
+    nombres,
+    apellidos,
+    dni,
+    estado_civil,
+    rol_id,
+    afiliador_id,
+    clinica,
+    Local_id,
+    fechNac,
+    telefono,
+    fotoPerfil,
+    direccion,
+  } = req.body;
+
+  // Validación de campos requeridos para el usuario y la clínica
+  if (
+    !correo ||
+    !contraseña ||
+    !nombres ||
+    !apellidos ||
+    !dni ||
+    !fechNac ||
+    !clinica.nombre ||
+    !clinica.ruc ||
+    !clinica.ubicacion
+  ) {
+    return res.status(400).json({
+      message: 'Faltan datos obligatorios. Asegúrate de incluir todos los campos.',
+    });
+  }
+
+  // Validación del correo electrónico
+  const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!emailRegex.test(correo)) {
+    return res.status(400).json({ message: 'El correo electrónico no es válido.' });
+  }
+
+  // Validación de la contraseña (mínimo 8 caracteres, 1 número, 1 letra mayúscula y 1 carácter especial)
+  const passwordRegex = /^(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]{8,}$/;
+  if (!passwordRegex.test(contraseña)) {
+    return res.status(400).json({
+      message:
+        'La contraseña debe tener al menos 8 caracteres, con al menos 1 número, 1 letra mayúscula y 1 carácter especial.',
+    });
+  }
+
+  // Validación del DNI (8 dígitos)
+  if (!/^\d{8}$/.test(dni)) {
+    return res.status(400).json({ message: 'El DNI debe tener exactamente 8 dígitos.' });
+  }
+
+  // Validaciones de los campos de la clínica
+  const { nombre: clinicaNombre, direccion: clinicaDireccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo } = clinica;
+
+  if (clinicaNombre.length > 100) {
+    return res.status(400).json({ message: 'El nombre de la clínica no puede exceder los 100 caracteres.' });
+  }
+  if (ruc.length !== 11 || !/^\d{11}$/.test(ruc)) {
+    return res.status(400).json({ message: 'El RUC de la clínica debe tener exactamente 11 dígitos.' });
+  }
+  if (ubicacion.length > 255) {
+    return res.status(400).json({ message: 'La ubicación de la clínica no puede exceder los 255 caracteres.' });
+  }
+
+  // Validación de teléfono de la clínica (si existe)
+  if (telefonos && (!/^\d{7,15}$/.test(telefonos))) {
+    return res.status(400).json({ message: 'El teléfono de la clínica debe ser un número válido.' });
+  }
+
+  // Validación de teléfono del usuario (opcional pero válido si existe)
+  if (telefono && (!/^\d{7,15}$/.test(telefono))) {
+    return res.status(400).json({ message: 'El teléfono del usuario debe ser un número válido.' });
+  }
+
+  // Iniciar transacción
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    // 1. Insertar la clínica
+    const clinicaSql = `
+      INSERT INTO Clinicas (nombre, direccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo)
+      VALUES (?, ?, ?, ?, ?, ?, ?)`;
+    const [clinicaResult] = await connection.query(clinicaSql, [
+      clinicaNombre,
+      clinicaDireccion,
+      ruc,
+      ubicacion,
+      telefonos,
+      ImagoTipo,
+      IsoTipo,
+    ]);
+
+    // Obtenemos el ID de la clínica insertada
+    const clinicaId = clinicaResult.insertId;
+
+    // 2. Insertar el usuario
+    const query = `
+      INSERT INTO Usuarios (correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, afiliador_id, clinica_id, Local_id, fechNac, telefono, fotoPerfil, direccion)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`;
+
+    const [usuarioResult] = await connection.query(query, [
+      correo,
+      contraseña,
+      nombres,
+      apellidos,
+      dni,
+      estado_civil,
+      rol_id,
+      afiliador_id,
+      clinicaId, // Asignar la clínica creada
+      Local_id,
+      fechNac,
+      telefono,
+      fotoPerfil,
+      direccion,
+    ]);
+
+    // Si todo salió bien, hacer commit
+    await connection.commit();
+
+    res.status(201).json({
+      success: true,
+      message: 'Usuario y clínica creados con éxito.',
+      usuarioId: usuarioResult.insertId,
+      clinicaId: clinicaId,
+    });
+  } catch (err) {
+    // Si ocurre un error, hacer rollback
+    await connection.rollback();
+    console.error('Error al crear usuario y clínica:', err);
+    res.status(500).json({ success: false, message: 'Error al crear usuario y clínica.' });
+  } finally {
+    // Liberar la conexión
+    connection.release();
+  }
+};
+
+
 
   export const editClinica = async (req, res) => {
     const { id } = req.params;
