@@ -20,31 +20,31 @@ export const getPromocionesId = async (req, res) => {
     }
   };  
 
-  export const getPromociones = async (req, res) => {
-    const query = `
-      SELECT 
-        Promociones.*, 
-        Clinicas.IsoTipo 
-      FROM 
-        Promociones 
-      LEFT JOIN 
-        Clinicas ON Promociones.clinica_id = Clinicas.id
-    `; // Consulta que une ambas tablas
-  
-    try {
-      const [results] = await pool.query(query);
-      
-      // Verificar si se encontraron resultados
-      if (results.length === 0) {
-        return res.status(404).json({ message: 'No se encontraron promociones.' });
-      }
-  
-      res.status(200).json(results);
-    } catch (err) {
-      console.error('Error al obtener las promociones:', err);
-      res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
+export const getPromociones = async (req, res) => {
+  const query = `
+    SELECT 
+      Promociones.*, 
+      Clinicas.IsoTipo 
+    FROM 
+      Promociones 
+    LEFT JOIN 
+      Clinicas ON Promociones.clinica_id = Clinicas.id
+  `; // Consulta que une ambas tablas
+
+  try {
+    const [results] = await pool.query(query);
+    
+    // Verificar si se encontraron resultados
+    if (results.length === 0) {
+      return res.status(404).json({ message: 'No se encontraron promociones.' });
     }
-  };
+
+    res.status(200).json(results);
+  } catch (err) {
+    console.error('Error al obtener las promociones:', err);
+    res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
+  }
+};
 
 export const getTopPromociones = async (req, res) => {
   const query = `
@@ -73,7 +73,7 @@ export const getTopPromociones = async (req, res) => {
     console.error('Error al obtener las promociones:', err);
     res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
   }
-  };
+};
 
 export const postPromocion = async (req, res) => {
     const { id } = req.params; // Obtener el ID de la clínica de los parámetros
@@ -185,7 +185,7 @@ export const AfiliadorEdit = async (req, res) => {
     } catch (error) {
         res.status(500).json({ message: error.message });
     }
-  };
+};
 
 export const Image = async (req, res) => {
   try {
@@ -205,7 +205,7 @@ export const Image = async (req, res) => {
       console.error("Error actualizando la imagen de perfil:", err);
       res.status(500).send("Error al actualizar la imagen de perfil");
   }
-  };
+};
 
 export const Rutas = async (req, res) => {
   const { id } = req.params; // Obtener el ID de la clínica de los parámetros
@@ -216,7 +216,7 @@ export const Rutas = async (req, res) => {
   }
 
   const queryUsuario = 'SELECT rol_id FROM Usuarios WHERE id = ?';
-  
+
   try {
     const [resultsUsu] = await pool.query(queryUsuario, [id]);
 
@@ -235,41 +235,6 @@ export const Rutas = async (req, res) => {
     console.error('Error al obtener las rutas:', err);
     res.status(500).json({ message: 'Error al obtener las rutas' });
   }
-  }
-
-  export const UsuariosRol = async (req,res) =>{
-    const {id} = req.params
-    const queryRol = `select id,correo,nombres,apellidos,telefono,rol_id,clinica_id from Usuarios where rol_id = ?`;
-    try {
-      const [users] = await pool.query(queryRol,[id]);
-      res.status(200).json(users)
-    } catch (error) {
-      res.status(500).json({message:'error',error})      
-    }
-  }
-
-  export const RolUsuario = async (req, res) => {
-    const { id } = req.params; // Obtener el ID del usuario de los parámetros
-    
-    // Validación del ID del usuario
-    if (!id || isNaN(id)) {
-      return res.status(400).json({ message: 'El ID del usuario es necesario y debe ser un número' });
-    }
-  
-    const queryUsuario = 'SELECT rol_id FROM Usuarios WHERE id = ?';
-    
-    try {
-      const [resultsUsu] = await pool.query(queryUsuario, [id]);
-  
-      // Validar que se haya encontrado un usuario
-      if (resultsUsu.length === 0) {
-        return res.status(404).json({ message: 'Usuario no encontrado' });
-      }
-      
-      // Enviar solo el rol_id
-      res.status(200).json({ rol_id: resultsUsu[0].rol_id });
-    } catch (err) {
-      console.error('Error al obtener las rutas:', err);
-      res.status(500).json({ message: 'Error al obtener las rutas' });
-    }
 }
+
+
