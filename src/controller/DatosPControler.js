@@ -20,30 +20,30 @@ export const getPromocionesId = async (req, res) => {
     }
   };  
 
-export const getPromociones = async (req, res) => {
-  const query = `
-    SELECT 
-      Promociones.*, 
-      Clinicas.IsoTipo 
-    FROM 
-      Promociones 
-    LEFT JOIN 
-      Clinicas ON Promociones.clinica_id = Clinicas.id
-  `; // Consulta que une ambas tablas
-
-  try {
-    const [results] = await pool.query(query);
-    
-    // Verificar si se encontraron resultados
-    if (results.length === 0) {
-      return res.status(404).json({ message: 'No se encontraron promociones.' });
+  export const getPromociones = async (req, res) => {
+    const query = `
+      SELECT 
+        Promociones.*, 
+        Clinicas.IsoTipo 
+      FROM 
+        Promociones 
+      LEFT JOIN 
+        Clinicas ON Promociones.clinica_id = Clinicas.id
+    `; // Consulta que une ambas tablas
+  
+    try {
+      const [results] = await pool.query(query);
+      
+      // Verificar si se encontraron resultados
+      if (results.length === 0) {
+        return res.status(404).json({ message: 'No se encontraron promociones.' });
+      }
+  
+      res.status(200).json(results);
+    } catch (err) {
+      console.error('Error al obtener las promociones:', err);
+      res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
     }
-
-    res.status(200).json(results);
-  } catch (err) {
-    console.error('Error al obtener las promociones:', err);
-    res.status(500).json({ message: 'Error al obtener las promociones. Intente nuevamente más tarde.' });
-  }
   };
 
 export const getTopPromociones = async (req, res) => {

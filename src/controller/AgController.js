@@ -54,11 +54,10 @@ export const postClinica = async (req, res) => {
       if (existingClinica.length > 0) {
           return res.status(400).json({ error: 'El RUC ya existe. Por favor, use uno diferente.' });
       }
-
+      
       // Inserta los datos en la base de datos
       const sql = 'INSERT INTO Clinicas (nombre, direccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo) VALUES (?, ?, ?, ?, ?, ?, ?)';
       const [results] = await pool.query(sql, [nombre, direccion, ruc, ubicacion, telefonos, ImagoTipo, IsoTipo]);
-
       res.status(201).json({ id: results.insertId, message: 'Clínica agregada exitosamente' });
   } catch (error) {
       console.error('Error insertando datos:', error);
