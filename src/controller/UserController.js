@@ -463,7 +463,7 @@ export const loginUsuario = async (req, res) => {
         };
 
         // Generar el token (expiración de 1 hora, puedes modificar el tiempo si lo deseas)
-        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '1h' });
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '12h' });
 
         // Responder con éxito, incluyendo los datos del usuario, sus vistas y el token generado
         return res.status(200).json({
