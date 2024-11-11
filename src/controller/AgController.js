@@ -298,20 +298,4 @@ export const crearUsuarioYClinica = async (req, res) => {
         res.status(500).send("Error al actualizar las imágenes");
     }
 };
-  
-export const GetIsoTipo = async (req, res) => {
-  try {
-      const query = 'SELECT id, IsoTipo FROM Clinicas WHERE IsoTipo IS NOT NULL';
-      const [results] = await pool.query(query);
-
-      if (results.length === 0) {
-          return res.status(404).json({ message: 'No se encontraron isotipos.' });
-      }
-
-      res.status(200).json(results);
-  } catch (error) {
-      console.error('Error al obtener los isotipos:', error);
-      res.status(500).json({ error: 'Error al obtener los isotipos' });
-  }
-};
 

@@ -10,7 +10,7 @@ routerDP.get('/getPromociones/:id',verificarToken, getPromocionesId);
 // Obtener datos personales por ID
 routerDP.get('/getPromociones',verificarToken, getPromociones);
 
-routerDP.get('/getPromocionesTop',verificarToken, getTopPromociones);
+routerDP.get('/getPromocionesTop', getTopPromociones);
 
 // Ruta para agregar datos personales y asociarlos a un usuario por su Idusuario
 routerDP.post('/CreatePromocion',verificarToken, postPromocion);
