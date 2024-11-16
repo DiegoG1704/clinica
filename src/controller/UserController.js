@@ -3,21 +3,21 @@ import pool from "../database.js";
 import jwt from 'jsonwebtoken';
 
 export const crearUsuario = async (req, res) => {
-    const { 
-        correo, 
-        contraseña, 
-        nombres, 
-        apellidos, 
-        dni, 
-        estado_civil, 
-        rol_id, 
-        afiliador_id, 
-        clinica_id, 
+    const {
+        correo,
+        contraseña,
+        nombres,
+        apellidos,
+        dni,
+        estado_civil,
+        rol_id,
+        afiliador_id,
+        clinica_id,
         Local_id,
-        fechNac, 
-        telefono, 
-        fotoPerfil, 
-        direccion 
+        fechNac,
+        telefono,
+        fotoPerfil,
+        direccion
     } = req.body;
 
     // Validaciones
@@ -130,13 +130,13 @@ export const getUsuario = async (req, res) => {
 
         result.forEach(user => {
             const {
-                usuario_id, 
-                correo, 
-                contraseña, 
-                nombres, 
-                apellidos, 
-                dni, 
-                estado_civil, 
+                usuario_id,
+                correo,
+                contraseña,
+                nombres,
+                apellidos,
+                dni,
+                estado_civil,
                 rol_id,
                 afiliador_id,
                 afiliador_correo,
@@ -263,19 +263,19 @@ export const FotoPerfil = async (req, res) => {
 
 export const editUsuarioId = async (req, res) => {
     const userId = req.params.id;
-    const { 
-        correo, 
-        contraseña, 
-        nombres, 
-        apellidos, 
-        dni, 
-        estado_civil, 
-        rol_id, 
-        afiliador_id, 
-        clinica_id, 
-        fechNac, 
-        telefono, 
-        direccion 
+    const {
+        correo,
+        contraseña,
+        nombres,
+        apellidos,
+        dni,
+        estado_civil,
+        rol_id,
+        afiliador_id,
+        clinica_id,
+        fechNac,
+        telefono,
+        direccion
     } = req.body;
 
     // Validaciones
@@ -358,18 +358,18 @@ export const editUsuarioId = async (req, res) => {
 
         // Nota el cambio en el orden de los parámetros aquí
         const [result] = await pool.query(sql, [
-            correo, 
-            contraseña, 
-            nombres, 
-            apellidos, 
-            dni, 
-            estado_civil, 
-            rol_id, 
+            correo,
+            contraseña,
+            nombres,
+            apellidos,
+            dni,
+            estado_civil,
+            rol_id,
             afiliador_id,
-            clinica_id, 
-            fechNac, 
-            telefono,  
-            direccion, 
+            clinica_id,
+            fechNac,
+            telefono,
+            direccion,
             userId // userId debe ser el último
         ]);
 
@@ -399,6 +399,13 @@ export const deleteUsuario = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+function generateAccessToken(payload) {
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1m' });
+}
+
+function generateRefreshToken(payload) {
+    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '5m' });
+}
 
 export const loginUsuario = async (req, res) => {
     const { correo, contraseña } = req.body;
@@ -462,10 +469,27 @@ export const loginUsuario = async (req, res) => {
             ...(usuario.clinica_id ? { clinica_id: usuario.clinica_id } : {})
         };
 
-        // Generar el token (expiración de 1 hora, puedes modificar el tiempo si lo deseas)
-        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '12h' });
+        // Generar Access Token y Refresh Token
+        const accessToken = generateAccessToken(tokenPayload);
+        const refreshToken = generateRefreshToken(tokenPayload);
 
-        // Responder con éxito, incluyendo los datos del usuario, sus vistas y el token generado
+        // Guarda el Refresh Token en una cookie
+        res.cookie('refreshToken', refreshToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'strict',
+            maxAge: 5 * 60 * 1000 
+        });
+        // Enviar el Access Token en una cookie HttpOnly
+        res.cookie('accessToken', accessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Solo en producción, usar https
+            sameSite: 'Strict',
+            maxAge: 60 * 1000 // 1 minuto
+
+        });
+
+        // Responder con éxito, incluyendo los datos del usuario, sus vistas y el access token generado
         return res.status(200).json({
             success: true,
             usuario: {
@@ -478,7 +502,7 @@ export const loginUsuario = async (req, res) => {
                 ...(usuario.clinica_id ? { clinica_id: usuario.clinica_id } : {}),
                 vistas: vistas
             },
-            token: token,  // Incluir el token en la respuesta
+            token: accessToken,  // Enviar el accessToken en la respuesta
             message: 'Bienvenido'
         });
 
@@ -487,22 +511,34 @@ export const loginUsuario = async (req, res) => {
         res.status(500).json({ message: 'Error del servidor' });
     }
 };
-export const verificarToken = (req, res, next) => {
-    const authHeader = req.headers['authorization'];
+export const verificarToken = async (req, res, next) => {
+    const { accessToken } = req.cookies;  // Obtenemos el accessToken desde las cookies
 
-    if (!authHeader || !authHeader.startsWith('Bearer ')) {
-        return res.status(403).json({ message: 'Token no proporcionado o formato incorrecto' });
-    }
+    if (!accessToken) {
+        // Si no hay accessToken, intentamos renovar el token
+        const tokenRenovado = await refreshToken(req, res);  // Llamamos a refreshToken asincrónicamente
 
-    const token = authHeader.split(' ')[1]; // Extraer el token después de 'Bearer'
-
-    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
-        if (err) {
-            return res.status(401).json({ message: 'Token inválido o expirado',err });
+        if (!tokenRenovado) {
+            return res.status(401).json({ message: 'No autorizado, no se pudo renovar el token' });
         }
-        req.usuario = decoded; // Almacenar la información del usuario en req para usarla en las siguientes rutas
-        next();
-    });
+
+        // Si el token se renovó correctamente, procedemos al siguiente middleware
+        return next();  // Añadimos "return" para evitar que se ejecute código posterior
+    } else {
+        // Si hay un accessToken, verificamos su validez
+        jwt.verify(accessToken, process.env.JWT_SECRET, (err, decoded) => {
+            if (err) {
+                return res.status(401).json({ message: 'Token inválido o expirado', error: err.message });
+            }
+
+            // Si el token es válido, guardamos la información del usuario decodificada en req.usuario
+            req.usuario = decoded;  // Guardamos los datos del usuario decodificados
+            console.log("Usuario verificado:", req.usuario);
+
+            // Continuamos con el siguiente middleware o ruta
+            return next();  // Añadimos "return" aquí para evitar que se ejecute código posterior
+        });
+    }
 };
 
 export const postRol = async (req, res) => {
@@ -599,14 +635,14 @@ export const getUsuarioById = async (req, res) => {
         const response = {
             children: []
         };
-        
+
         const uniqueIds = new Set(); // To track unique user IDs
-        
+
         result.forEach(item => {
             // Check if the user is already in the response
             if (!uniqueIds.has(item.afiliado_id)) {
                 uniqueIds.add(item.afiliado_id);
-        
+
                 const afiliado = {
                     id: item.afiliado_id,
                     nombres: item.afiliado_nombres,
@@ -616,7 +652,7 @@ export const getUsuarioById = async (req, res) => {
                     rol: item.afiliado_rol_nombre,
                     children: []
                 };
-        
+
                 // Now we populate the children for this afiliado
                 result.forEach(af2 => {
                     if (af2.afiliado_id === item.afiliado_id && af2.afiliado_nivel_2_id) {
@@ -629,7 +665,7 @@ export const getUsuarioById = async (req, res) => {
                             rol: af2.afiliado_nivel_2_rol_nombre,
                             children: []
                         };
-        
+
                         // Populate the children for nivel 2
                         result.forEach(af3 => {
                             if (af3.afiliado_id === af2.afiliado_id && af3.afiliado_nivel_3_id) {
@@ -643,17 +679,17 @@ export const getUsuarioById = async (req, res) => {
                                 });
                             }
                         });
-        
+
                         afiliado.children.push(nivel2);
                     }
                 });
-        
+
                 response.children.push(afiliado);
             }
         });
-        
+
         res.status(200).json(response.children);
-        
+
     } catch (error) {
         console.error('Error fetching user and affiliates:', error);
         res.status(500).json({ message: error.message });
@@ -661,26 +697,27 @@ export const getUsuarioById = async (req, res) => {
 };
 
 
+
 export const getAfiliadosPorUsuarioId = async (req, res) => {
     const userId = req.params.id;
-    const {  
-        rol_id, 
+    const {
+        rol_id,
         codigo
     } = req.body;
 
     try {
-    if (rol_id === undefined && codigo === undefined) {
-        return res.status(400).json({ message: 'Se requiere al menos rol_id o codigo para actualizar.' });
-    }
-    const sql = `UPDATE Usuarios SET rol_id = ?, codigo =? WHERE id = ?`;
-    const [result] = await pool.query(sql, [
-        rol_id, 
-        codigo,
-        userId 
-    ]);
-    if (result.affectedRows === 0) {
-        return res.status(404).json({ message: 'Usuario no encontrado' });
-    }
+        if (rol_id === undefined && codigo === undefined) {
+            return res.status(400).json({ message: 'Se requiere al menos rol_id o codigo para actualizar.' });
+        }
+        const sql = `UPDATE Usuarios SET rol_id = ?, codigo =? WHERE id = ?`;
+        const [result] = await pool.query(sql, [
+            rol_id,
+            codigo,
+            userId
+        ]);
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
         res.json({ message: 'Usuario actualizado exitosamente' });
     } catch (err) {
         console.error('Error al actualizar el usuario:', err);
@@ -704,6 +741,117 @@ export const GetAfiliadorAfiliadores = async (req, res) => {
         return res.status(500).json({ message: 'Error al obtener los usuarios' });
     }
 };
+export const refreshToken = async (req, res) => {
+    const { refreshToken } = req.cookies;
+
+    if (!refreshToken) {
+        return false;  // Si no hay refresh token, no podemos renovar
+    }
+
+    try {
+        const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+        const newAccessToken = generateAccessToken({ id: decoded.id, correo: decoded.correo });
+
+        // Si los encabezados ya fueron enviados, no hacemos nada más
+        if (res.headersSent) {
+            return false;
+        }
+
+        res.cookie('accessToken', newAccessToken, {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production', // Solo en producción, usar https
+            sameSite: 'Strict',
+            maxAge: 60 * 1000, // 1 minuto
+        });
+
+        // Retornar un valor para indicar que el token fue renovado
+        return true;
+    } catch (err) {
+        // Si ocurre un error al verificar el refreshToken, no renovar el accessToken
+        return false;
+    }
+};
+export const me = async (req, res) => {
+    const user = req.usuario; // Los datos del usuario decodificados desde el JWT
+    // Retornar los datos del usuario
+    try {
+        // Consultar la base de datos para obtener la información del usuario
+        const [rows] = await pool.query(`
+            SELECT 
+                u.id AS usuarioId, 
+                u.correo, 
+                u.nombres, 
+                u.apellidos, 
+                u.fotoPerfil, 
+                u.clinica_id, 
+                r.nombre AS rol,
+                v.id AS vistaId, 
+                v.nombre AS vistaNombre, 
+                v.logo, 
+                v.ruta
+            FROM 
+                Usuarios u
+            LEFT JOIN 
+                Roles r ON u.rol_id = r.id
+            LEFT JOIN 
+                Vistas v ON r.id = v.rol_id
+            WHERE 
+                u.id = ?;
+        `, [user?.id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        // Extraer la información del usuario
+        const usuario = rows[0];
+
+        // Agrupar las vistas en un array
+        const vistas = rows.map(row => ({
+            id: row.vistaId,
+            nombre: row.vistaNombre,
+            logo: row.logo,
+            ruta: row.ruta
+        }));
+
+        // Devolver los datos del usuario y las vistas
+        res.status(200).json({
+            id: usuario.usuarioId,
+            correo: usuario.correo,
+            nombres: usuario.nombres,
+            apellidos: usuario.apellidos,
+            fotoPerfil: usuario.fotoPerfil,
+            rol: usuario.rol,
+            clinica_id: usuario.clinica_id || null, // Si no tiene clínica, poner null
+            vistas: vistas // Devolver las vistas
+        });
+
+    } catch (error) {
+        console.error(error);
+        res.status(500).json({ message: 'Error al obtener los datos del usuario' });
+    }
+    // res.status(200).json({
+
+    //    id:user.id,
+    //     correo: user.correo,
+    //     nombre: user.nombres,
+
+    // });
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 //opcional
 // import fs from 'fs';
 // import path from 'path';
@@ -760,16 +908,16 @@ export const GetAfiliadorAfiliadores = async (req, res) => {
 // };
 
 export const crearUsuarioCode = async (req, res) => {
-    const { 
-        correo, 
-        contraseña, 
-        nombres, 
-        apellidos, 
-        dni, 
-        estado_civil, 
-        rol_id, 
-        fechNac, 
-        telefono, 
+    const {
+        correo,
+        contraseña,
+        nombres,
+        apellidos,
+        dni,
+        estado_civil,
+        rol_id,
+        fechNac,
+        telefono,
         direccion,
         codigo2        // Nuevo campo codigo2
     } = req.body;
@@ -846,7 +994,7 @@ export const crearUsuarioCode = async (req, res) => {
 
         // Ejecutar la consulta de inserción
         const [result] = await pool.query(query, [
-            correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id, 
+            correo, contraseña, nombres, apellidos, dni, estado_civil, rol_id,
             afiliador_id, fechNac, telefono, direccion, codigo2
         ]);
 
