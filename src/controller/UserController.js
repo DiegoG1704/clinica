@@ -1,6 +1,8 @@
 import multer from "multer";
 import pool from "../database.js";
-import jwt from 'jsonwebtoken';
+import jwt from 'jsonwebtoken';  // Importa jsonwebtoken como módulo
+import dotenv from 'dotenv';     // Importa dotenv como módulo
+dotenv.config();  // Cargar las variables de entorno desde el archivo .env
 
 export const crearUsuario = async (req, res) => {
     const { 
