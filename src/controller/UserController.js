@@ -478,7 +478,7 @@ export const loginUsuario = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 5 * 60 * 1000 
+            maxAge: 5 * 60 * 1000
         });
         // Enviar el Access Token en una cookie HttpOnly
         res.cookie('accessToken', accessToken, {
@@ -695,6 +695,31 @@ export const getUsuarioById = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+export const logoutUsuario= async (req, res) => {
+    try {
+        // Eliminar las cookies de acceso y refresco
+        res.clearCookie('accessToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict'
+        });
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict'
+        });
+
+        // Responder con éxito
+        return res.status(200).json({ message: 'Logout exitoso' });
+    } catch (error) {
+        console.error('Error al hacer logout:', error);
+        res.status(500).json({ message: 'Error del servidor' });
+    }
+
+
+}
+
+
 
 
 

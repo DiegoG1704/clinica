@@ -2,7 +2,7 @@ import { Router } from "express";
 import {
     deleteUsuario, editUsuarioId, getUsuario, loginUsuario, postRol, crearUsuario, getUsuariosId, getUsuarioById,
     getAfiliadosPorUsuarioId, getUsuarioDatosId, FotoPerfil, upload, GetAfiliadorAfiliadores, verificarToken, crearUsuarioCode,
-    refreshToken,me
+    refreshToken,me,logoutUsuario
 } from "../controller/UserController.js";
 
 const router = Router();
@@ -40,5 +40,6 @@ router.get('/afiliadores-afiliados', verificarToken, GetAfiliadorAfiliadores);
 router.post('/UserCode', crearUsuarioCode)
 router.post('/refresh-token',refreshToken)
 router.get("/me",verificarToken,me)
+router.post("/logout",verificarToken,logoutUsuario)
 
 export default router;
