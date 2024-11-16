@@ -207,7 +207,7 @@ export const Image = async (req, res) => {
   };
 
 export const Rutas = async (req, res) => {
-  const { id } = req.params; // Obtener el ID de la clínica de los parámetros
+  const { id } = req.params;  // Obtener el ID de la clínica de los parámetros
   
   // Validación del ID de la clínica
   if (!id || isNaN(id)) {
