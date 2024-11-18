@@ -1,4 +1,6 @@
 import pool from "../database.js";
+  import fs from 'fs';
+  import path from 'path';
 
 export const getClinica = async (req, res) => {
     const query = 'SELECT * FROM Clinicas';
@@ -190,8 +192,6 @@ export const crearUsuarioYClinica = async (req, res) => {
   }
 };
 
-
-
   export const editClinica = async (req, res) => {
     const { id } = req.params;
     const { nombre, direccion, ruc, ubicacion, telefonos } = req.body;
@@ -262,39 +262,69 @@ export const crearUsuarioYClinica = async (req, res) => {
     }
   };
 
+
+  
   export const uploadImages = async (req, res) => {
-    try {
-        const { id } = req.params; // Obtener el ID de la clínica desde los parámetros
-        const { ImagoTipo, IsoTipo } = req.files; // Obtener ambos archivos
-
-        // Si no se suben ambas imágenes
-        if (!ImagoTipo || !IsoTipo) {
-            return res.status(400).json({ message: 'Faltan imágenes para cargar.' });
-        }
-
-        // Obtener las rutas de las imágenes
-        const imagePathImagoTipo = ImagoTipo[0].filename;
-        const imagePathIsoTipo = IsoTipo[0].filename;
-
-        // Actualizar la base de datos con las nuevas imágenes
-        const query = `
-            UPDATE clinicas 
-            SET ImagoTipo = ?, IsoTipo = ? 
-            WHERE Id = ?
-        `;
-        const [result] = await pool.query(query, [imagePathImagoTipo, imagePathIsoTipo, id]);
-
-        if (result.affectedRows === 0) {
-            return res.status(404).json({ message: 'Clínica no encontrada' });
-        }
-
-        res.status(201).json({
-            message: 'Imagenes subidas con éxito',
-            fotoPerfil: imagePathImagoTipo,
-            fotoTipo: imagePathIsoTipo
-        });
-    } catch (err) {
-        console.error("Error al actualizar las imágenes:", err);
-        res.status(500).send("Error al actualizar las imágenes");
-    }
-};
+      try {
+          const { id } = req.params; // ID de la clínica desde los parámetros
+          const { ImagoTipo, IsoTipo } = req.files; // Obtener ambos archivos
+  
+          // Validar que ambas imágenes estén presentes
+          if (!ImagoTipo || !IsoTipo) {
+              return res.status(400).json({ message: 'Faltan imágenes para cargar.' });
+          }
+  
+          // Obtener las nuevas rutas de las imágenes
+          const newImagePathImagoTipo = ImagoTipo[0].filename;
+          const newImagePathIsoTipo = IsoTipo[0].filename;
+  
+          // Obtener las rutas actuales de las imágenes desde la base de datos
+          const queryGetImages = `
+              SELECT ImagoTipo, IsoTipo 
+              FROM clinicas 
+              WHERE Id = ?
+          `;
+          const [rows] = await pool.query(queryGetImages, [id]);
+  
+          if (rows.length === 0) {
+              return res.status(404).json({ message: 'Clínica no encontrada' });
+          }
+  
+          const { ImagoTipo: currentImagoTipo, IsoTipo: currentIsoTipo } = rows[0];
+  
+          // Eliminar las imágenes anteriores si existen
+          const deleteImage = (imagePath) => {
+              if (imagePath) {
+                  const fullPath = path.join('uploads', imagePath);
+                  if (fs.existsSync(fullPath)) {
+                      fs.unlinkSync(fullPath); // Eliminar el archivo del sistema
+                  }
+              }
+          };
+  
+          deleteImage(currentImagoTipo);
+          deleteImage(currentIsoTipo);
+  
+          // Actualizar la base de datos con las nuevas imágenes
+          const queryUpdateImages = `
+              UPDATE clinicas 
+              SET ImagoTipo = ?, IsoTipo = ? 
+              WHERE Id = ?
+          `;
+          const [result] = await pool.query(queryUpdateImages, [newImagePathImagoTipo, newImagePathIsoTipo, id]);
+  
+          if (result.affectedRows === 0) {
+              return res.status(404).json({ message: 'Clínica no encontrada' });
+          }
+  
+          res.status(201).json({
+              message: 'Imágenes subidas y actualizadas con éxito',
+              ImagoTipo: newImagePathImagoTipo,
+              IsoTipo: newImagePathIsoTipo
+          });
+      } catch (err) {
+          console.error("Error al actualizar las imágenes:", err);
+          res.status(500).send("Error al actualizar las imágenes");
+      }
+  };
+  

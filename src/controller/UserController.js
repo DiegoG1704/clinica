@@ -1,5 +1,7 @@
 import multer from "multer";
 import pool from "../database.js";
+import path from 'path';
+import fs from 'fs';
 import jwt from 'jsonwebtoken';  // Importa jsonwebtoken como módulo
 import dotenv from 'dotenv';     // Importa dotenv como módulo
 dotenv.config();  // Cargar las variables de entorno desde el archivo .env
@@ -234,10 +236,10 @@ export const getUsuarioDatosId = async (req, res) => {
 
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-        cb(null, 'uploads/');  // Carpeta donde se guardarán las imágenes
+        cb(null, 'uploads/'); // Carpeta donde se guardarán las imágenes
     },
     filename: (req, file, cb) => {
-        cb(null, `${Date.now()}-${file.originalname}`);  // Guardar la imagen con nombre único
+        cb(null, `${Date.now()}-${file.originalname}`); // Nombre único
     }
 });
 
@@ -246,17 +248,35 @@ export const upload = multer({ storage: storage });
 export const FotoPerfil = async (req, res) => {
     try {
         const Id = req.params.id;
-        const imagePath = req.file.filename;  // Obtener el nombre del archivo guardado
+        const newImagePath = req.file.filename; // Obtener el nuevo nombre del archivo
+
+        // Obtener la ruta de la imagen actual
+        const queryGetImage = 'SELECT fotoPerfil FROM Usuarios WHERE Id = ?';
+        const [rows] = await pool.query(queryGetImage, [Id]);
+
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Usuario no encontrado' });
+        }
+
+        const currentImagePath = rows[0].fotoPerfil;
+
+        // Eliminar la imagen anterior si existe
+        if (currentImagePath) {
+            const fullPath = path.join('uploads', currentImagePath);
+            if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath); // Eliminar el archivo
+            }
+        }
 
         // Actualizar la ruta de la imagen en la base de datos
-        const query = 'UPDATE Usuarios SET fotoPerfil = ? WHERE Id = ?';
-        const [result] = await pool.query(query, [imagePath, Id]);
+        const queryUpdateImage = 'UPDATE Usuarios SET fotoPerfil = ? WHERE Id = ?';
+        const [result] = await pool.query(queryUpdateImage, [newImagePath, Id]);
 
         if (result.affectedRows === 0) {
             return res.status(404).json({ message: 'Usuario no encontrado' });
         }
 
-        res.status(201).json({ fotoPerfil: imagePath, message: 'Éxito' });
+        res.status(201).json({ fotoPerfil: newImagePath, message: 'Éxito' });
     } catch (err) {
         console.error("Error actualizando la imagen de perfil:", err);
         res.status(500).send("Error al actualizar la imagen de perfil");
@@ -697,9 +717,29 @@ export const getUsuarioById = async (req, res) => {
         res.status(500).json({ message: error.message });
     }
 };
+export const logoutUsuario= async (req, res) => {
+    try {
+        // Eliminar las cookies de acceso y refresco
+        res.clearCookie('accessToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict'
+        });
+        res.clearCookie('refreshToken', {
+            httpOnly: true,
+            secure: process.env.NODE_ENV === 'production',
+            sameSite: 'Strict'
+        });
+
+        // Responder con éxito
+        return res.status(200).json({ message: 'Logout exitoso' });
+    } catch (error) {
+        console.error('Error al hacer logout:', error);
+        res.status(500).json({ message: 'Error del servidor' });
+    }
 
 
-
+}
 export const getAfiliadosPorUsuarioId = async (req, res) => {
     const userId = req.params.id;
     const {
