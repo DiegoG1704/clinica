@@ -402,11 +402,11 @@ export const deleteUsuario = async (req, res) => {
     }
 };
 function generateAccessToken(payload) {
-    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '1m' });
+    return jwt.sign(payload, process.env.JWT_SECRET, { expiresIn: '6h' });
 }
 
 function generateRefreshToken(payload) {
-    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '5m' });
+    return jwt.sign(payload, process.env.JWT_REFRESH_SECRET, { expiresIn: '12h' });
 }
 
 export const loginUsuario = async (req, res) => {
@@ -480,14 +480,14 @@ export const loginUsuario = async (req, res) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production',
             sameSite: 'strict',
-            maxAge: 5 * 60 * 1000 
+            maxAge: 12 * 60 * 60 * 1000 
         });
         // Enviar el Access Token en una cookie HttpOnly
         res.cookie('accessToken', accessToken, {
             httpOnly: true,
             secure: process.env.NODE_ENV === 'production', // Solo en producción, usar https
             sameSite: 'Strict',
-            maxAge: 60 * 1000 // 1 minuto
+            maxAge: 6* 60 *60 * 1000 // 1 minuto
 
         });
 
