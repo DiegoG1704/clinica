@@ -491,27 +491,10 @@ export const loginUsuario = async (req, res) => {
             ...(usuario.clinica_id ? { clinica_id: usuario.clinica_id } : {})
         };
 
-        // Generar Access Token y Refresh Token
-        const accessToken = generateAccessToken(tokenPayload);
-        const refreshToken = generateRefreshToken(tokenPayload);
+        // Generar el token (expiración de 1 hora, puedes modificar el tiempo si lo deseas)
+        const token = jwt.sign(tokenPayload, process.env.JWT_SECRET, { expiresIn: '12h' });
 
-        // Guarda el Refresh Token en una cookie
-        res.cookie('refreshToken', refreshToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production',
-            sameSite: 'strict',
-            maxAge: 12 * 60 * 60 * 1000 
-        });
-        // Enviar el Access Token en una cookie HttpOnly
-        res.cookie('accessToken', accessToken, {
-            httpOnly: true,
-            secure: process.env.NODE_ENV === 'production', // Solo en producción, usar https
-            sameSite: 'Strict',
-            maxAge: 6* 60 *60 * 1000 // 1 minuto
-
-        });
-
-        // Responder con éxito, incluyendo los datos del usuario, sus vistas y el access token generado
+        // Responder con éxito, incluyendo los datos del usuario, sus vistas y el token generado
         return res.status(200).json({
             success: true,
             usuario: {
@@ -524,7 +507,7 @@ export const loginUsuario = async (req, res) => {
                 ...(usuario.clinica_id ? { clinica_id: usuario.clinica_id } : {}),
                 vistas: vistas
             },
-            token: accessToken,  // Enviar el accessToken en la respuesta
+            token: token,  // Incluir el token en la respuesta
             message: 'Bienvenido'
         });
 
@@ -533,36 +516,23 @@ export const loginUsuario = async (req, res) => {
         res.status(500).json({ message: 'Error del servidor' });
     }
 };
-export const verificarToken = async (req, res, next) => {
-    const { accessToken } = req.cookies;  // Obtenemos el accessToken desde las cookies
+export const verificarToken = (req, res, next) => {
+    const authHeader = req.headers['authorization'];
 
-    if (!accessToken) {
-        // Si no hay accessToken, intentamos renovar el token
-        const tokenRenovado = await refreshToken(req, res);  // Llamamos a refreshToken asincrónicamente
-
-        if (!tokenRenovado) {
-            return res.status(401).json({ message: 'No autorizado, no se pudo renovar el token' });
-        }
-
-        // Si el token se renovó correctamente, procedemos al siguiente middleware
-        return next();  // Añadimos "return" para evitar que se ejecute código posterior
-    } else {
-        // Si hay un accessToken, verificamos su validez
-        jwt.verify(accessToken, process.env.JWT_SECRET, (err, decoded) => {
-            if (err) {
-                return res.status(401).json({ message: 'Token inválido o expirado', error: err.message });
-            }
-
-            // Si el token es válido, guardamos la información del usuario decodificada en req.usuario
-            req.usuario = decoded;  // Guardamos los datos del usuario decodificados
-            console.log("Usuario verificado:", req.usuario);
-
-            // Continuamos con el siguiente middleware o ruta
-            return next();  // Añadimos "return" aquí para evitar que se ejecute código posterior
-        });
+    if (!authHeader || !authHeader.startsWith('Bearer ')) {
+        return res.status(403).json({ message: 'Token no proporcionado o formato incorrecto' });
     }
-};
 
+    const token = authHeader.split(' ')[1]; // Extraer el token después de 'Bearer'
+
+    jwt.verify(token, process.env.JWT_SECRET, (err, decoded) => {
+        if (err) {
+            return res.status(401).json({ message: 'Token inválido o expirado',err });
+        }
+        req.usuario = decoded; // Almacenar la información del usuario en req para usarla en las siguientes rutas
+        next();
+    });
+};
 export const postRol = async (req, res) => {
     try {
         const { nombre } = req.body;
