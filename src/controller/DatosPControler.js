@@ -1,5 +1,8 @@
 import pool from "../database.js";
-import multer from "multer";
+import multer from "multer"; 
+import fs from 'fs';
+import path from 'path';
+
 
 export const getPromocionesId = async (req, res) => {
     const { id } = req.params; // Obtener el ID de la clínica de los parámetros
@@ -185,25 +188,43 @@ export const AfiliadorEdit = async (req, res) => {
     }
   };
 
-export const Image = async (req, res) => {
-  try {
-      const Id = req.params.id;
-      const imagePath = req.file.filename; // Obtener el nombre del archivo guardado
-
-      // Actualizar la ruta de la imagen en la base de datos
-      const query = 'UPDATE promociones SET imagen = ? WHERE Id = ?';
-      const [result] = await pool.query(query, [imagePath, Id]);
-
-      if (result.affectedRows === 0) {
-          return res.status(404).json({ message: 'Promoción no encontrada' });
-      }
-
-      res.status(201).json({ fotoPerfil: imagePath, message: 'Éxito' });
-  } catch (err) {
-      console.error("Error actualizando la imagen de perfil:", err);
-      res.status(500).send("Error al actualizar la imagen de perfil");
-  }
-  };
+  export const Image = async (req, res) => {
+    try {
+        const Id = req.params.id;
+        const newImagePath = req.file.filename; // Obtener el nuevo nombre del archivo
+  
+        // Consultar la ruta de la imagen actual en la base de datos
+        const queryGetImage = 'SELECT imagen FROM promociones WHERE Id = ?';
+        const [rows] = await pool.query(queryGetImage, [Id]);
+  
+        if (rows.length === 0) {
+            return res.status(404).json({ message: 'Promoción no encontrada' });
+        }
+  
+        const currentImagePath = rows[0].imagen;
+  
+        // Eliminar la imagen anterior si existe
+        if (currentImagePath) {
+            const fullPath = path.join('uploads', currentImagePath);
+            if (fs.existsSync(fullPath)) {
+                fs.unlinkSync(fullPath); // Eliminar el archivo del sistema
+            }
+        }
+  
+        // Actualizar la ruta de la imagen en la base de datos
+        const queryUpdateImage = 'UPDATE promociones SET imagen = ? WHERE Id = ?';
+        const [result] = await pool.query(queryUpdateImage, [newImagePath, Id]);
+  
+        if (result.affectedRows === 0) {
+            return res.status(404).json({ message: 'Promoción no encontrada' });
+        }
+  
+        res.status(201).json({ imagen: newImagePath, message: 'Éxito' });
+    } catch (err) {
+        console.error("Error actualizando la imagen de la promoción:", err);
+        res.status(500).send("Error al actualizar la imagen de la promoción");
+    }
+  };  
 
 export const Rutas = async (req, res) => {
   const { id } = req.params; // Obtener el ID de la clínica de los parámetros
