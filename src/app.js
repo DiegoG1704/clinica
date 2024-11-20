@@ -21,7 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
 
 app.use(cors({
-    origin: 'http://localhost:3000',  // Asegúrate de que coincida con tu frontend
+    origin: 'https://mas-salud-test-production.up.railway.app/',  // Asegúrate de que coincida con tu frontend
     credentials: true,  // Habilitar el envío de cookies
 }));
 // app.use(compression()); // Añade la compresión aquí
