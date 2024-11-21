@@ -19,8 +19,11 @@ import dotenv from 'dotenv';
 const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
-
-app.use(cors());
+const corsOptions={
+    origin:["https://meticulous-optimism-production.up.railway.app"],
+    methods:["OPTIONS","GET","PUT","POST","DELETE"]
+}
+app.use(cors(corsOptions));    
 // app.use(compression()); // Añade la compresión aquí
 // app.options('*', cors());
 app.set('views', join(__dirname, 'views'));
