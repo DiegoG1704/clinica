@@ -21,7 +21,7 @@ const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
 
 app.use(cors({
-    origin: 'https://meticulous-optimism-production.up.railway.app/',  // Asegúrate de que coincida con tu frontend
+    origin: 'https://meticulous-optimism-production.up.railway.app',  // Asegúrate de que coincida con tu frontend
     credentials: true,  // Habilitar el envío de cookies
 }));
 // app.use(compression()); // Añade la compresión aquí
