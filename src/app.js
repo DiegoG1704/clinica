@@ -25,7 +25,7 @@ app.use(cors({
     credentials: true,  // Habilitar el envío de cookies
 }));
 // app.use(compression()); // Añade la compresión aquí
-
+app.options('*', cors());
 app.set('views', join(__dirname, 'views'));
 app.engine('hbs', engine({
     defaultLayout: 'main',
