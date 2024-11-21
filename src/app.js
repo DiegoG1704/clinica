@@ -20,12 +20,9 @@ const app = express();
 const __dirname = dirname(fileURLToPath(import.meta.url));
 dotenv.config();
 
-app.use(cors({
-    origin: 'https://meticulous-optimism-production.up.railway.app',  // Asegúrate de que coincida con tu frontend
-    credentials: true,  // Habilitar el envío de cookies
-}));
+app.use(cors());
 // app.use(compression()); // Añade la compresión aquí
-app.options('*', cors());
+// app.options('*', cors());
 app.set('views', join(__dirname, 'views'));
 app.engine('hbs', engine({
     defaultLayout: 'main',
